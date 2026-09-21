@@ -1228,14 +1228,14 @@ def test_compute_event_price_reaction_handles_empty_history():
 # ---------- library_sources.py ----------
 
 def test_is_youtube_url_detects_both_formats():
-    from library_sources import is_youtube_url
+    from knowledge.library_sources import is_youtube_url
     assert is_youtube_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
     assert is_youtube_url("https://youtu.be/dQw4w9WgXcQ")
     assert not is_youtube_url("https://www.economist.com/some-article")
 
 
 def test_extract_youtube_id():
-    from library_sources import _extract_youtube_id
+    from knowledge.library_sources import _extract_youtube_id
     assert _extract_youtube_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "dQw4w9WgXcQ"
     assert _extract_youtube_id("https://not-a-youtube-url.com") is None
 
@@ -1243,7 +1243,7 @@ def test_extract_youtube_id():
 # ---------- library_index.py: URL-verwerking ----------
 
 def test_process_urls_creates_file_when_missing(tmp_path, monkeypatch):
-    import library_index
+    import knowledge.library_index as library_index
     monkeypatch.chdir(tmp_path)
     library_index.process_urls(collection=None, client=None)
     assert (tmp_path / "library" / "urls.txt").exists()
@@ -1251,7 +1251,7 @@ def test_process_urls_creates_file_when_missing(tmp_path, monkeypatch):
 
 def test_process_urls_deduplicates_by_url(tmp_path, monkeypatch):
     from unittest.mock import patch, MagicMock
-    import library_index
+    import knowledge.library_index as library_index
     monkeypatch.chdir(tmp_path)
     (tmp_path / "library").mkdir()
     (tmp_path / "library" / "urls.txt").write_text("https://youtu.be/test123\n")
@@ -1271,8 +1271,8 @@ def test_process_urls_deduplicates_by_url(tmp_path, monkeypatch):
         return resp
 
     fake_collection = FakeCollection()
-    with patch("library_index.fetch_source_text", return_value=("Titel", "tekst " * 100)), \
-         patch("library_index.requests.post", side_effect=fake_post):
+    with patch("knowledge.library_index.fetch_source_text", return_value=("Titel", "tekst " * 100)), \
+         patch("knowledge.library_index.requests.post", side_effect=fake_post):
         library_index.process_urls(fake_collection, None)
         first_count = len(fake_collection.added)
         library_index.process_urls(fake_collection, None)
@@ -2486,7 +2486,7 @@ def test_search_library_handles_blocked_import_gracefully():
     crashte bij het opstarten (tools.py importeert library_search bij het
     laden). Nu moet dit soort importfout alleen deze ene tool uitschakelen."""
     import importlib
-    import library_search
+    import knowledge.library_search as library_search
 
     original_error = library_search._IMPORT_ERROR
     try:
@@ -2502,7 +2502,7 @@ def test_search_library_handles_blocked_import_gracefully():
 
 def test_library_search_missing_api_key_gives_clean_error():
     import os
-    import library_search
+    import knowledge.library_search as library_search
     saved = os.environ.pop("VOYAGE_API_KEY", None)
     try:
         result = library_search.search_library("test")
@@ -2518,7 +2518,7 @@ def test_library_search_uses_query_input_type():
     bibliotheek-fragmenten zelf tijdens het indexeren."""
     import os
     from unittest.mock import patch, MagicMock
-    import library_search
+    import knowledge.library_search as library_search
 
     os.environ["VOYAGE_API_KEY"] = "fake-key-for-test"
     library_search._collection = None
@@ -2531,8 +2531,8 @@ def test_library_search_uses_query_input_type():
     fake_response.raise_for_status = lambda: None
     fake_response.json.return_value = {"data": [{"embedding": [0.1, 0.2], "index": 0}]}
 
-    with patch("library_search._get_collection", return_value=fake_collection), \
-         patch("library_search.requests.post", return_value=fake_response) as mock_post:
+    with patch("knowledge.library_search._get_collection", return_value=fake_collection), \
+         patch("knowledge.library_search.requests.post", return_value=fake_response) as mock_post:
         result = library_search.search_library("test query")
 
     assert mock_post.call_args.kwargs["json"]["input_type"] == "query"
@@ -2543,7 +2543,7 @@ def test_embed_documents_batches_at_128():
     """Reproduceert Voyage's harde batch-limiet: meer dan 128 teksten in
     één aanroep is niet toegestaan, dus embed_documents moet zelf opdelen."""
     from unittest.mock import patch, MagicMock
-    import library_index
+    import knowledge.library_index as library_index
 
     chunks = [f"fragment {i}" for i in range(300)]
     call_sizes = []
@@ -2555,7 +2555,7 @@ def test_embed_documents_batches_at_128():
         resp.json.return_value = {"data": [{"embedding": [0.1, 0.2], "index": i} for i in range(len(json["input"]))]}
         return resp
 
-    with patch("library_index.requests.post", side_effect=fake_post):
+    with patch("knowledge.library_index.requests.post", side_effect=fake_post):
         embeddings = library_index.embed_documents(None, chunks)
     assert call_sizes == [128, 128, 44]
     assert len(embeddings) == 300
@@ -2563,7 +2563,7 @@ def test_embed_documents_batches_at_128():
 
 def test_library_index_main_requires_api_key(tmp_path, monkeypatch, capsys):
     import os
-    import library_index
+    import knowledge.library_index as library_index
     monkeypatch.chdir(tmp_path)
     saved = os.environ.pop("VOYAGE_API_KEY", None)
     try:

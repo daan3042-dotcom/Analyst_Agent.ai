@@ -33,12 +33,19 @@ model komt: die vectoren zijn niet compatibel met Voyage's vectoren
 """
 
 import os
+import sys
+
+if __name__ == "__main__":
+    # Zorgt dat "python src/knowledge/library_index.py" blijft werken nu dit
+    # bestand in een subpakket zit: src/ (de ouder van knowledge/) moet op
+    # sys.path staan voor de package-import hieronder.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import chromadb
 import pdfplumber
 import requests
 
-from library_sources import fetch_source_text
+from knowledge.library_sources import fetch_source_text
 
 PDF_DIR = "library/pdfs"
 URLS_FILE = "library/urls.txt"
