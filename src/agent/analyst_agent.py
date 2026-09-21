@@ -23,6 +23,12 @@ import sys
 import time
 from datetime import datetime
 
+if __name__ == "__main__":
+    # Zorgt dat "python src/agent/analyst_agent.py" blijft werken nu dit
+    # bestand in een subpakket zit: src/ (de ouder van agent/) moet op
+    # sys.path staan voor de package-imports hieronder (data.data_fetch e.d.).
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import anthropic
 
 from data_fetch import (

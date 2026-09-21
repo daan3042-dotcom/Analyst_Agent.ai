@@ -1162,7 +1162,7 @@ def test_section_18_gets_variant_perception_styling():
 
 
 def test_bank_rating_backstop_ignores_section_18_content():
-    from analyst_agent import _BANK_RATING_PATTERN
+    from agent.analyst_agent import _BANK_RATING_PATTERN
     import re
     text = (
         "6. Financial Ratios\nGeen koersdoelen hier.\n\n"
@@ -1173,7 +1173,7 @@ def test_bank_rating_backstop_ignores_section_18_content():
 
 
 def test_bank_rating_backstop_still_catches_violations_before_section_18():
-    from analyst_agent import _BANK_RATING_PATTERN
+    from agent.analyst_agent import _BANK_RATING_PATTERN
     import re
     text = (
         "6. Financial Ratios\nWells Fargo raised its price target to $68.\n\n"
@@ -1527,7 +1527,7 @@ def test_call_claude_with_retry_simple_caches_system_prompt():
     zelfcorrectie, executive summary) het systeemprompt-blok expliciet
     cachet -- dit is precies waar de kostenbesparing vandaan komt."""
     from unittest.mock import MagicMock
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
     client = MagicMock()
     fake_response = MagicMock()
     fake_response.stop_reason = "end_turn"
@@ -1547,7 +1547,7 @@ def test_review_report_includes_crossref_reviewer_as_fourth():
     reviewer de algehele goedkeuring terecht laat mislukken -- reproduceert
     het patroon van de echte Wiz-overnamedatum-bug."""
     from unittest.mock import MagicMock
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
     def fake_stream(system, messages, **kwargs):
         system_text = system[0]["text"]
@@ -1577,26 +1577,26 @@ def test_run_analysis_self_check_applies_correction():
     reviewers) een correctie daadwerkelijk verwerkt in het eindresultaat,
     niet alleen een lege stap is."""
     from unittest.mock import patch, MagicMock
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
-    with patch("analyst_agent.fetch_company_data") as m_company, \
-         patch("analyst_agent.validate_company_data"), \
-         patch("analyst_agent.fetch_sec_financials") as m_sec, \
-         patch("analyst_agent.fetch_historical_volatility") as m_vol, \
-         patch("analyst_agent.fetch_macro_snapshot") as m_macro, \
-         patch("analyst_agent.compute_reverse_dcf") as m_dcf, \
-         patch("analyst_agent.compute_altman_z") as m_altman, \
-         patch("analyst_agent.compute_piotroski_score") as m_piotroski, \
-         patch("analyst_agent.compute_intrinsic_value_estimate") as m_ivalue, \
-         patch("analyst_agent.fetch_insider_transactions") as m_insider, \
-         patch("analyst_agent.compute_options_analysis") as m_options, \
-         patch("analyst_agent.fetch_short_interest") as m_shortint, \
-         patch("analyst_agent.load_previous_report") as m_prev, \
-         patch("analyst_agent.review_report") as m_review, \
-         patch("analyst_agent.save_report_snapshot"), \
-         patch("analyst_agent.get_brand_colors") as m_colors, \
-         patch("analyst_agent.call_claude_with_retry_simple") as m_simple, \
-         patch("analyst_agent.anthropic.Anthropic") as m_anthropic_cls:
+    with patch("agent.analyst_agent.fetch_company_data") as m_company, \
+         patch("agent.analyst_agent.validate_company_data"), \
+         patch("agent.analyst_agent.fetch_sec_financials") as m_sec, \
+         patch("agent.analyst_agent.fetch_historical_volatility") as m_vol, \
+         patch("agent.analyst_agent.fetch_macro_snapshot") as m_macro, \
+         patch("agent.analyst_agent.compute_reverse_dcf") as m_dcf, \
+         patch("agent.analyst_agent.compute_altman_z") as m_altman, \
+         patch("agent.analyst_agent.compute_piotroski_score") as m_piotroski, \
+         patch("agent.analyst_agent.compute_intrinsic_value_estimate") as m_ivalue, \
+         patch("agent.analyst_agent.fetch_insider_transactions") as m_insider, \
+         patch("agent.analyst_agent.compute_options_analysis") as m_options, \
+         patch("agent.analyst_agent.fetch_short_interest") as m_shortint, \
+         patch("agent.analyst_agent.load_previous_report") as m_prev, \
+         patch("agent.analyst_agent.review_report") as m_review, \
+         patch("agent.analyst_agent.save_report_snapshot"), \
+         patch("agent.analyst_agent.get_brand_colors") as m_colors, \
+         patch("agent.analyst_agent.call_claude_with_retry_simple") as m_simple, \
+         patch("agent.analyst_agent.anthropic.Anthropic") as m_anthropic_cls:
 
         m_company.return_value = {"ticker": "AA", "long_name": "Alcoa Corporation", "market_cap": 12_000_000_000}
         for m in (m_sec, m_vol, m_macro, m_dcf, m_altman, m_piotroski, m_ivalue, m_insider, m_options, m_shortint):
@@ -1645,26 +1645,26 @@ def test_run_analysis_recovers_from_degenerate_tool_use_response():
     content'). Bevestigt dat de agent dit nu opvangt door de kapotte beurt
     terug te draaien en de ronde te herhalen, i.p.v. te crashen."""
     from unittest.mock import patch, MagicMock
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
-    with patch("analyst_agent.fetch_company_data") as m_company, \
-         patch("analyst_agent.validate_company_data"), \
-         patch("analyst_agent.fetch_sec_financials") as m_sec, \
-         patch("analyst_agent.fetch_historical_volatility") as m_vol, \
-         patch("analyst_agent.fetch_macro_snapshot") as m_macro, \
-         patch("analyst_agent.compute_reverse_dcf") as m_dcf, \
-         patch("analyst_agent.compute_altman_z") as m_altman, \
-         patch("analyst_agent.compute_piotroski_score") as m_piotroski, \
-         patch("analyst_agent.compute_intrinsic_value_estimate") as m_ivalue, \
-         patch("analyst_agent.fetch_insider_transactions") as m_insider, \
-         patch("analyst_agent.compute_options_analysis") as m_options, \
-         patch("analyst_agent.fetch_short_interest") as m_shortint, \
-         patch("analyst_agent.load_previous_report") as m_prev, \
-         patch("analyst_agent.review_report") as m_review, \
-         patch("analyst_agent.save_report_snapshot"), \
-         patch("analyst_agent.get_brand_colors") as m_colors, \
-         patch("analyst_agent.call_claude_with_retry_simple") as m_simple, \
-         patch("analyst_agent.anthropic.Anthropic") as m_anthropic_cls:
+    with patch("agent.analyst_agent.fetch_company_data") as m_company, \
+         patch("agent.analyst_agent.validate_company_data"), \
+         patch("agent.analyst_agent.fetch_sec_financials") as m_sec, \
+         patch("agent.analyst_agent.fetch_historical_volatility") as m_vol, \
+         patch("agent.analyst_agent.fetch_macro_snapshot") as m_macro, \
+         patch("agent.analyst_agent.compute_reverse_dcf") as m_dcf, \
+         patch("agent.analyst_agent.compute_altman_z") as m_altman, \
+         patch("agent.analyst_agent.compute_piotroski_score") as m_piotroski, \
+         patch("agent.analyst_agent.compute_intrinsic_value_estimate") as m_ivalue, \
+         patch("agent.analyst_agent.fetch_insider_transactions") as m_insider, \
+         patch("agent.analyst_agent.compute_options_analysis") as m_options, \
+         patch("agent.analyst_agent.fetch_short_interest") as m_shortint, \
+         patch("agent.analyst_agent.load_previous_report") as m_prev, \
+         patch("agent.analyst_agent.review_report") as m_review, \
+         patch("agent.analyst_agent.save_report_snapshot"), \
+         patch("agent.analyst_agent.get_brand_colors") as m_colors, \
+         patch("agent.analyst_agent.call_claude_with_retry_simple") as m_simple, \
+         patch("agent.analyst_agent.anthropic.Anthropic") as m_anthropic_cls:
 
         m_company.return_value = {"ticker": "AA", "long_name": "Alcoa Corporation", "market_cap": 12_000_000_000}
         for m in (m_sec, m_vol, m_macro, m_dcf, m_altman, m_piotroski, m_ivalue, m_insider, m_options, m_shortint):
@@ -2104,7 +2104,7 @@ def test_call_claude_with_retry_recovers_from_raw_network_exception():
     streamen) moet nu ALSNOG worden opgevangen en opnieuw geprobeerd, in
     plaats van het hele script te laten crashen."""
     from unittest.mock import MagicMock, patch
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
     class RawNetworkError(Exception):
         """Staat voor een willekeurige, niet-anthropic-specifieke fout --
@@ -2117,7 +2117,7 @@ def test_call_claude_with_retry_recovers_from_raw_network_exception():
     client = MagicMock()
     client.messages.stream.side_effect = [RawNetworkError("verbinding verbroken"), _stream_cm(fake_response)]
 
-    with patch("analyst_agent.time.sleep"):
+    with patch("agent.analyst_agent.time.sleep"):
         result = analyst_agent.call_claude_with_retry(client, [{"role": "user", "content": "test"}])
 
     assert result is fake_response
@@ -2126,12 +2126,12 @@ def test_call_claude_with_retry_recovers_from_raw_network_exception():
 
 def test_call_claude_with_retry_raises_after_max_retries_exhausted():
     from unittest.mock import MagicMock, patch
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
     client = MagicMock()
     client.messages.stream.side_effect = Exception("aanhoudende netwerkfout")
 
-    with patch("analyst_agent.time.sleep"):
+    with patch("agent.analyst_agent.time.sleep"):
         try:
             analyst_agent.call_claude_with_retry(client, [{"role": "user", "content": "test"}])
             assert False, "had een RuntimeError moeten opgooien"
@@ -2409,7 +2409,7 @@ def test_review_report_distinguishes_truncation_from_other_json_errors():
     moet de foutmelding expliciet 'afgekapt door max_tokens' zeggen i.p.v.
     alleen de kale, afgekapte tekst te tonen."""
     from unittest.mock import MagicMock
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
     def fake_stream(system, messages, **kwargs):
         resp = MagicMock()
@@ -2434,7 +2434,7 @@ def test_review_report_uses_generous_max_tokens():
     4000 bleek bij PLTR alsnog te weinig voor een rapport met veel
     kruisverwijzing-bevindingen."""
     from unittest.mock import MagicMock
-    import analyst_agent
+    import agent.analyst_agent as analyst_agent
 
     fake_response = MagicMock()
     fake_response.stop_reason = "end_turn"
