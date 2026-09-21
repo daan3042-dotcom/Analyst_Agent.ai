@@ -25,7 +25,7 @@ from render import (
 )
 from framework.framework import REPORT_SECTIONS
 from framework.tools import ALL_TOOLS, run_tool
-from data_fetch import fetch_recent_news
+from data.data_fetch import fetch_recent_news
 
 
 # ---------- render.py: formatteer-functies ----------
@@ -159,7 +159,7 @@ def test_fetch_recent_news_without_api_key(monkeypatch):
 # ---------- sec_data.py: XBRL-verwerking zonder netwerk ----------
 
 def test_extract_annual_series_filters_quarterly_and_sorts():
-    from sec_data import _extract_annual_series
+    from data.sec_data import _extract_annual_series
     tag_data = {
         "units": {
             "USD": [
@@ -176,7 +176,7 @@ def test_extract_annual_series_filters_quarterly_and_sorts():
 
 
 def test_extract_annual_series_caps_at_six_years():
-    from sec_data import _extract_annual_series
+    from data.sec_data import _extract_annual_series
     tag_data = {
         "units": {
             "USD": [
@@ -191,7 +191,7 @@ def test_extract_annual_series_caps_at_six_years():
 
 
 def test_extract_annual_series_returns_none_without_annual_data():
-    from sec_data import _extract_annual_series
+    from data.sec_data import _extract_annual_series
     tag_data = {"units": {"USD": [{"form": "10-Q", "fp": "Q2", "end": "2023-06-30", "val": 1, "fy": 2023}]}}
     assert _extract_annual_series(tag_data) is None
 
@@ -470,7 +470,7 @@ def test_extract_annual_series_deduplicates_repeated_comparative_years():
     # verschillende "fy"-labels, omdat elke latere aangifte het als
     # vergelijkingscijfer herhaalt. SEC's "fy"-veld beschrijft de aangifte,
     # niet het jaar van het cijfer zelf -- we dedupliceren nu op einddatum.
-    from sec_data import _extract_annual_series
+    from data.sec_data import _extract_annual_series
     tag_data = {
         "units": {
             "USD": [
@@ -490,7 +490,7 @@ def test_extract_annual_series_rejects_quarter_mislabeled_as_fy():
     # Ontdekt via dezelfde testrun: een kwartaalcijfer (~90 dagen) stond
     # met form="10-K" en fp="FY" tussen de data -- SEC's "fp"-label bleek
     # niet betrouwbaar, dus checken we nu zelf de periodelengte.
-    from sec_data import _extract_annual_series
+    from data.sec_data import _extract_annual_series
     tag_data = {
         "units": {
             "USD": [
@@ -748,18 +748,18 @@ def test_no_probability_weighting_without_probability_pct():
 # ---------- data_fetch.py: historische volatiliteit ----------
 
 def test_compute_annualized_volatility_constant_price_is_zero():
-    from data_fetch import _compute_annualized_volatility
+    from data.data_fetch import _compute_annualized_volatility
     assert _compute_annualized_volatility([100.0] * 30) == 0.0
 
 
 def test_compute_annualized_volatility_returns_none_with_insufficient_data():
-    from data_fetch import _compute_annualized_volatility
+    from data.data_fetch import _compute_annualized_volatility
     assert _compute_annualized_volatility([100.0]) is None
     assert _compute_annualized_volatility([]) is None
 
 
 def test_compute_annualized_volatility_positive_for_varying_prices():
-    from data_fetch import _compute_annualized_volatility
+    from data.data_fetch import _compute_annualized_volatility
     prices = [100.0]
     for i in range(50):
         prices.append(prices[-1] * (1.01 if i % 2 == 0 else 0.99))
@@ -770,7 +770,7 @@ def test_compute_annualized_volatility_positive_for_varying_prices():
 # ---------- fmp_data.py ----------
 
 def test_fmp_to_annual_series_sorts_chronologically():
-    from fmp_data import _to_annual_series
+    from data.fmp_data import _to_annual_series
     rows = [
         {"date": "2024-12-31", "revenue": 200},
         {"date": "2022-12-31", "revenue": 100},
@@ -781,21 +781,21 @@ def test_fmp_to_annual_series_sorts_chronologically():
 
 
 def test_fmp_to_annual_series_converts_negative_capex_to_positive():
-    from fmp_data import _to_annual_series
+    from data.fmp_data import _to_annual_series
     rows = [{"date": "2024-12-31", "capitalExpenditure": -618000000}]
     series = _to_annual_series(rows, "capitalExpenditure", take_abs=True)
     assert series[0]["value"] == 618000000
 
 
 def test_fmp_to_annual_series_skips_missing_values():
-    from fmp_data import _to_annual_series
+    from data.fmp_data import _to_annual_series
     rows = [{"date": "2024-12-31", "revenue": None}, {"date": "2023-12-31", "revenue": 100}]
     series = _to_annual_series(rows, "revenue")
     assert len(series) == 1
 
 
 def test_fetch_fmp_financials_without_api_key():
-    from fmp_data import fetch_fmp_financials
+    from data.fmp_data import fetch_fmp_financials
     import os
     old_key = os.environ.pop("FMP_API_KEY", None)
     try:
@@ -810,8 +810,8 @@ def test_fmp_output_shape_matches_sec_output_shape():
     """Cruciale test: FMP en SEC moeten dezelfde dict-vorm teruggeven zodat
     forensics.py/altman_z.py/financial_model.py niet hoeven te weten welke
     bron het is."""
-    from fmp_data import fetch_fmp_financials
-    from sec_data import fetch_sec_financials
+    from data.fmp_data import fetch_fmp_financials
+    from data.sec_data import fetch_sec_financials
     import os
     os.environ.pop("FMP_API_KEY", None)
     fmp_error_shape = fetch_fmp_financials("ERO")
@@ -1037,7 +1037,7 @@ def test_track_record_reads_old_single_dict_file_format(tmp_path, monkeypatch):
 # ---------- sec_data.py: insider-transacties (Form 4) ----------
 
 def test_parse_form4_xml_extracts_transactions():
-    from sec_data import _parse_form4_xml
+    from data.sec_data import _parse_form4_xml
     xml = (
         "<ownershipDocument><reportingOwner><reportingOwnerId><rptOwnerName>Jane Doe</rptOwnerName>"
         "</reportingOwnerId><reportingOwnerRelationship><isOfficer>1</isOfficer>"
@@ -1055,13 +1055,13 @@ def test_parse_form4_xml_extracts_transactions():
 
 
 def test_parse_form4_xml_handles_malformed_xml():
-    from sec_data import _parse_form4_xml
+    from data.sec_data import _parse_form4_xml
     assert _parse_form4_xml("not valid xml <<<") == []
 
 
 def test_fetch_insider_transactions_aggregates_buys_and_sells():
     from unittest.mock import patch, MagicMock
-    import sec_data
+    import data.sec_data as sec_data
 
     fake_submissions = {"filings": {"recent": {
         "form": ["4", "10-K", "4"],
@@ -1100,8 +1100,8 @@ def test_fetch_insider_transactions_aggregates_buys_and_sells():
             resp.text = xml_buy
         return resp
 
-    with patch("sec_data._get_ticker_cik_map", return_value={"TEST": "0001234567"}), \
-         patch("sec_data.requests.get", side_effect=fake_get):
+    with patch("data.sec_data._get_ticker_cik_map", return_value={"TEST": "0001234567"}), \
+         patch("data.sec_data.requests.get", side_effect=fake_get):
         result = sec_data.fetch_insider_transactions("TEST")
 
     assert result["open_market_buys"] == 1
@@ -1111,8 +1111,8 @@ def test_fetch_insider_transactions_aggregates_buys_and_sells():
 
 def test_fetch_insider_transactions_unknown_ticker():
     from unittest.mock import patch
-    import sec_data
-    with patch("sec_data._get_ticker_cik_map", return_value={"AAPL": "0000320193"}):
+    import data.sec_data as sec_data
+    with patch("data.sec_data._get_ticker_cik_map", return_value={"AAPL": "0000320193"}):
         result = sec_data.fetch_insider_transactions("NOTATICKER")
     assert "error" in result
 
@@ -1188,7 +1188,7 @@ def test_bank_rating_backstop_still_catches_violations_before_section_18():
 def test_compute_event_price_reaction_measures_correct_jump():
     from unittest.mock import patch
     import pandas as pd
-    from data_fetch import compute_event_price_reaction
+    from data.data_fetch import compute_event_price_reaction
 
     dates = pd.date_range("2026-06-01", "2026-07-20", freq="D")
     dates = dates[dates.dayofweek < 5]
@@ -1201,7 +1201,7 @@ def test_compute_event_price_reaction_measures_correct_jump():
         closes.append(price)
     fake_history = pd.DataFrame({"Close": closes}, index=dates)
 
-    with patch("data_fetch.yf.Ticker") as MockTicker:
+    with patch("data.data_fetch.yf.Ticker") as MockTicker:
         MockTicker.return_value.history.return_value = fake_history
         result = compute_event_price_reaction("TEST", "2026-06-15", window_days=30)
         assert result["day_of_reaction_pct"] == 8.0
@@ -1210,7 +1210,7 @@ def test_compute_event_price_reaction_measures_correct_jump():
 
 
 def test_compute_event_price_reaction_rejects_invalid_date():
-    from data_fetch import compute_event_price_reaction
+    from data.data_fetch import compute_event_price_reaction
     result = compute_event_price_reaction("TEST", "15-06-2026")
     assert "error" in result
 
@@ -1218,8 +1218,8 @@ def test_compute_event_price_reaction_rejects_invalid_date():
 def test_compute_event_price_reaction_handles_empty_history():
     from unittest.mock import patch
     import pandas as pd
-    from data_fetch import compute_event_price_reaction
-    with patch("data_fetch.yf.Ticker") as MockTicker:
+    from data.data_fetch import compute_event_price_reaction
+    with patch("data.data_fetch.yf.Ticker") as MockTicker:
         MockTicker.return_value.history.return_value = pd.DataFrame()
         result = compute_event_price_reaction("TEST", "2026-06-15")
         assert "error" in result
@@ -1855,7 +1855,7 @@ def test_render_distribution_mismatched_histogram_lengths_falls_back():
 # ---------- data_fetch.py: VaR, Sharpe/Sortino, lopende beta ----------
 
 def test_value_at_risk_matches_manual_calculation():
-    from data_fetch import compute_value_at_risk
+    from data.data_fetch import compute_value_at_risk
     import math
     result = compute_value_at_risk(current_price=46.26, annualized_volatility_pct=56.2)
     daily_vol = 0.562 / math.sqrt(252)
@@ -1864,13 +1864,13 @@ def test_value_at_risk_matches_manual_calculation():
 
 
 def test_value_at_risk_missing_inputs_returns_error():
-    from data_fetch import compute_value_at_risk
+    from data.data_fetch import compute_value_at_risk
     assert "error" in compute_value_at_risk(None, 56.2)
     assert "error" in compute_value_at_risk(46.26, None)
 
 
 def test_sharpe_sortino_computes_values():
-    from data_fetch import compute_sharpe_sortino
+    from data.data_fetch import compute_sharpe_sortino
     import random
     random.seed(3)
     closes = [100.0]
@@ -1883,7 +1883,7 @@ def test_sharpe_sortino_computes_values():
 
 
 def test_sharpe_sortino_missing_inputs_returns_error():
-    from data_fetch import compute_sharpe_sortino
+    from data.data_fetch import compute_sharpe_sortino
     assert "error" in compute_sharpe_sortino([100] * 50, None)
     assert "error" in compute_sharpe_sortino([100, 101], 4.3)
 
@@ -1892,7 +1892,7 @@ def test_rolling_beta_recovers_known_synthetic_beta():
     from unittest.mock import patch, MagicMock
     import pandas as pd
     import numpy as np
-    from data_fetch import compute_rolling_beta
+    from data.data_fetch import compute_rolling_beta
 
     np.random.seed(5)
     n = 400
@@ -1909,7 +1909,7 @@ def test_rolling_beta_recovers_known_synthetic_beta():
         m.history.return_value = market_df if symbol == "^GSPC" else stock_df
         return m
 
-    with patch("data_fetch.yf.Ticker", side_effect=fake_ticker):
+    with patch("data.data_fetch.yf.Ticker", side_effect=fake_ticker):
         result = compute_rolling_beta("TEST", period="3y", window_days=90, step_days=21)
 
     avg_beta = sum(result["betas"]) / len(result["betas"])
@@ -1918,8 +1918,8 @@ def test_rolling_beta_recovers_known_synthetic_beta():
 
 def test_rolling_beta_handles_fetch_failure():
     from unittest.mock import patch
-    from data_fetch import compute_rolling_beta
-    with patch("data_fetch.yf.Ticker", side_effect=Exception("netwerkfout")):
+    from data.data_fetch import compute_rolling_beta
+    with patch("data.data_fetch.yf.Ticker", side_effect=Exception("netwerkfout")):
         result = compute_rolling_beta("TEST")
     assert "error" in result
 
@@ -1981,7 +1981,7 @@ def test_regime_detection_identifies_known_transition():
     from unittest.mock import patch
     import pandas as pd
     import numpy as np
-    from data_fetch import compute_regime_detection
+    from data.data_fetch import compute_regime_detection
 
     np.random.seed(10)
     calm_returns = np.random.normal(0.0003, 0.008, 200)
@@ -1991,7 +1991,7 @@ def test_regime_detection_identifies_known_transition():
     dates = pd.date_range("2024-01-01", periods=len(closes), freq="B")
     fake_hist = pd.DataFrame({"Close": closes}, index=dates)
 
-    with patch("data_fetch.yf.Ticker") as MockTicker:
+    with patch("data.data_fetch.yf.Ticker") as MockTicker:
         MockTicker.return_value.history.return_value = fake_hist
         result = compute_regime_detection("TEST", period="3y", n_states=2)
 
@@ -2004,8 +2004,8 @@ def test_regime_detection_identifies_known_transition():
 def test_regime_detection_insufficient_data_returns_error():
     from unittest.mock import patch
     import pandas as pd
-    from data_fetch import compute_regime_detection
-    with patch("data_fetch.yf.Ticker") as MockTicker:
+    from data.data_fetch import compute_regime_detection
+    with patch("data.data_fetch.yf.Ticker") as MockTicker:
         MockTicker.return_value.history.return_value = pd.DataFrame({"Close": [100.0] * 20})
         result = compute_regime_detection("TEST")
     assert "error" in result
@@ -2013,8 +2013,8 @@ def test_regime_detection_insufficient_data_returns_error():
 
 def test_regime_detection_handles_fetch_failure():
     from unittest.mock import patch
-    from data_fetch import compute_regime_detection
-    with patch("data_fetch.yf.Ticker", side_effect=Exception("netwerkfout")):
+    from data.data_fetch import compute_regime_detection
+    with patch("data.data_fetch.yf.Ticker", side_effect=Exception("netwerkfout")):
         result = compute_regime_detection("TEST")
     assert "error" in result
 
@@ -2472,8 +2472,8 @@ def test_fetch_insider_transactions_handles_cik_map_failure_gracefully():
     geen foutafhandeling -- als die een netwerkfout gooit, moet
     fetch_insider_transactions dit netjes opvangen i.p.v. te crashen."""
     from unittest.mock import patch
-    import sec_data
-    with patch("sec_data._get_ticker_cik_map", side_effect=Exception("netwerkfout")):
+    import data.sec_data as sec_data
+    with patch("data.sec_data._get_ticker_cik_map", side_effect=Exception("netwerkfout")):
         result = sec_data.fetch_insider_transactions("TEST")
     assert "error" in result
 
@@ -2632,7 +2632,7 @@ def test_parse_form4_xml_handles_true_false_booleans():
     'true'/'false' als tekst voor de rol-velden, niet '1'/'0' zoals eerder
     aangenomen -- waardoor de rol altijd stil terugviel op 'insider' in
     plaats van het echte 'officer'/'director'."""
-    from sec_data import _parse_form4_xml
+    from data.sec_data import _parse_form4_xml
     xml = (
         "<ownershipDocument><reportingOwner><reportingOwnerId><rptOwnerName>Bhappu Ross R.</rptOwnerName>"
         "</reportingOwnerId><reportingOwnerRelationship><isDirector>false</isDirector>"
@@ -2707,7 +2707,7 @@ def test_compute_regime_detection_works_without_hmmlearn():
     from unittest.mock import patch
     import pandas as pd
     import numpy as np
-    from data_fetch import compute_regime_detection
+    from data.data_fetch import compute_regime_detection
 
     np.random.seed(10)
     calm_returns = np.random.normal(0.0003, 0.008, 200)
@@ -2717,7 +2717,7 @@ def test_compute_regime_detection_works_without_hmmlearn():
     dates = pd.date_range("2024-01-01", periods=len(closes), freq="B")
     fake_hist = pd.DataFrame({"Close": closes}, index=dates)
 
-    with patch("data_fetch.yf.Ticker") as MockTicker:
+    with patch("data.data_fetch.yf.Ticker") as MockTicker:
         MockTicker.return_value.history.return_value = fake_hist
         result = compute_regime_detection("TEST", period="3y", n_states=2)
 
@@ -2821,7 +2821,7 @@ def test_compute_options_analysis_full_scenario():
     from unittest.mock import patch, MagicMock
     import pandas as pd
     from datetime import datetime, timedelta
-    from data_fetch import compute_options_analysis
+    from data.data_fetch import compute_options_analysis
 
     target_date = (datetime.now().date() + timedelta(days=37)).strftime("%Y-%m-%d")
     calls = pd.DataFrame({
@@ -2838,7 +2838,7 @@ def test_compute_options_analysis_full_scenario():
     mock_ticker.history.return_value = pd.DataFrame({"Close": [100.0]})
     mock_ticker.option_chain.return_value = fake_chain
 
-    with patch("data_fetch.yf.Ticker", return_value=mock_ticker):
+    with patch("data.data_fetch.yf.Ticker", return_value=mock_ticker):
         result = compute_options_analysis("TEST", historical_volatility_pct=30.0)
 
     assert result["atm_implied_volatility_pct"] == 39.0
@@ -2849,18 +2849,18 @@ def test_compute_options_analysis_full_scenario():
 
 def test_compute_options_analysis_no_options_available():
     from unittest.mock import patch, MagicMock
-    from data_fetch import compute_options_analysis
+    from data.data_fetch import compute_options_analysis
     mock_ticker = MagicMock()
     mock_ticker.options = ()
-    with patch("data_fetch.yf.Ticker", return_value=mock_ticker):
+    with patch("data.data_fetch.yf.Ticker", return_value=mock_ticker):
         result = compute_options_analysis("SMALLCO")
     assert "error" in result
 
 
 def test_compute_options_analysis_network_failure():
     from unittest.mock import patch
-    from data_fetch import compute_options_analysis
-    with patch("data_fetch.yf.Ticker", side_effect=Exception("netwerkfout")):
+    from data.data_fetch import compute_options_analysis
+    with patch("data.data_fetch.yf.Ticker", side_effect=Exception("netwerkfout")):
         result = compute_options_analysis("TEST")
     assert "error" in result
 
@@ -2869,7 +2869,7 @@ def test_compute_options_analysis_works_without_historical_vol():
     from unittest.mock import patch, MagicMock
     import pandas as pd
     from datetime import datetime, timedelta
-    from data_fetch import compute_options_analysis
+    from data.data_fetch import compute_options_analysis
 
     target_date = (datetime.now().date() + timedelta(days=37)).strftime("%Y-%m-%d")
     calls = pd.DataFrame({"strike": [100], "impliedVolatility": [0.38], "volume": [500], "openInterest": [5000]})
@@ -2880,7 +2880,7 @@ def test_compute_options_analysis_works_without_historical_vol():
     mock_ticker.history.return_value = pd.DataFrame({"Close": [100.0]})
     mock_ticker.option_chain.return_value = fake_chain
 
-    with patch("data_fetch.yf.Ticker", return_value=mock_ticker):
+    with patch("data.data_fetch.yf.Ticker", return_value=mock_ticker):
         result = compute_options_analysis("TEST")
     assert "historical_volatility_pct" not in result
     assert "iv_minus_hv_pct" not in result
@@ -2891,7 +2891,7 @@ def test_compute_options_analysis_works_without_historical_vol():
 
 def test_fetch_short_interest_with_realistic_schema():
     from unittest.mock import patch, MagicMock
-    from finra_data import fetch_short_interest
+    from data.finra_data import fetch_short_interest
 
     fake_metadata = {"fields": [
         {"name": "symbolCode"}, {"name": "settlementDate"},
@@ -2912,8 +2912,8 @@ def test_fetch_short_interest_with_realistic_schema():
         resp = MagicMock(); resp.raise_for_status = lambda: None; resp.json.return_value = fake_data
         return resp
 
-    with patch("finra_data.requests.get", side_effect=fake_get), \
-         patch("finra_data.requests.post", side_effect=fake_post):
+    with patch("data.finra_data.requests.get", side_effect=fake_get), \
+         patch("data.finra_data.requests.post", side_effect=fake_post):
         result = fetch_short_interest("TEST")
 
     assert result["current_short_shares"] == 5000000.0
@@ -2922,29 +2922,29 @@ def test_fetch_short_interest_with_realistic_schema():
 
 def test_fetch_short_interest_unrecognizable_schema():
     from unittest.mock import patch, MagicMock
-    from finra_data import fetch_short_interest
+    from data.finra_data import fetch_short_interest
     fake_metadata = {"fields": [{"name": "completelyDifferentFieldName"}]}
 
     def fake_get(url, headers=None, timeout=None):
         resp = MagicMock(); resp.raise_for_status = lambda: None; resp.json.return_value = fake_metadata
         return resp
 
-    with patch("finra_data.requests.get", side_effect=fake_get):
+    with patch("data.finra_data.requests.get", side_effect=fake_get):
         result = fetch_short_interest("TEST")
     assert "error" in result
 
 
 def test_fetch_short_interest_network_failure():
     from unittest.mock import patch
-    from finra_data import fetch_short_interest
-    with patch("finra_data.requests.get", side_effect=Exception("netwerkfout")):
+    from data.finra_data import fetch_short_interest
+    with patch("data.finra_data.requests.get", side_effect=Exception("netwerkfout")):
         result = fetch_short_interest("TEST")
     assert "error" in result
 
 
 def test_fetch_short_interest_no_data_for_ticker():
     from unittest.mock import patch, MagicMock
-    from finra_data import fetch_short_interest
+    from data.finra_data import fetch_short_interest
     fake_metadata = {"fields": [
         {"name": "symbolCode"}, {"name": "settlementDate"},
         {"name": "currentShortPositionQuantity"}, {"name": "averageDailyVolumeQuantity"},
@@ -2959,8 +2959,8 @@ def test_fetch_short_interest_no_data_for_ticker():
         resp = MagicMock(); resp.raise_for_status = lambda: None; resp.json.return_value = []
         return resp
 
-    with patch("finra_data.requests.get", side_effect=fake_get), \
-         patch("finra_data.requests.post", side_effect=fake_post):
+    with patch("data.finra_data.requests.get", side_effect=fake_get), \
+         patch("data.finra_data.requests.post", side_effect=fake_post):
         result = fetch_short_interest("NIETBESTAAND")
     assert "error" in result
 

@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
 import anthropic
 
-from data_fetch import (
+from data.data_fetch import (
     compute_options_analysis,
     compute_regime_detection,
     compute_rolling_beta,
@@ -44,12 +44,12 @@ from data_fetch import (
 from altman_z import compute_altman_z
 from piotroski_score import compute_piotroski_score
 from consistency_check import check_output_consistency
-from finra_data import fetch_short_interest
+from data.finra_data import fetch_short_interest
 from forensics import compute_forensic_flags, compute_verified_metrics
-from fred_data import fetch_macro_snapshot
-from fmp_data import fetch_fmp_financials
+from data.fred_data import fetch_macro_snapshot
+from data.fmp_data import fetch_fmp_financials
 from reverse_dcf import compute_intrinsic_value_estimate, compute_reverse_dcf
-from sec_data import fetch_insider_transactions, fetch_sec_financials
+from data.sec_data import fetch_insider_transactions, fetch_sec_financials
 from framework.framework import (
     EXECUTIVE_SUMMARY_SYSTEM_PROMPT,
     REVIEW_SYSTEM_PROMPT_COMPLETENESS,

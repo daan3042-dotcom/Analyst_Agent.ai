@@ -12,8 +12,8 @@ op block.type == "tool_use"). Hij staat hier toch, omdat dit de plek is waar
 alle tool-definities samenkomen die je aan de Claude-call meegeeft.
 """
 
-from commodity_data import fetch_commodity_price, fetch_fx_rate
-from data_fetch import fetch_recent_news, compute_event_price_reaction
+from data.commodity_data import fetch_commodity_price, fetch_fx_rate
+from data.data_fetch import fetch_recent_news, compute_event_price_reaction
 from self_consistency import assess_with_consistency
 from financial_model import compute_sensitivity, project_scenario, run_monte_carlo_simulation
 from library_search import search_library
