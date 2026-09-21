@@ -199,7 +199,7 @@ def test_extract_annual_series_returns_none_without_annual_data():
 # ---------- reverse_dcf.py ----------
 
 def test_dcf_value_matches_gordon_growth_when_growth_equals_terminal():
-    from reverse_dcf import TERMINAL_GROWTH, _dcf_value
+    from analysis.reverse_dcf import TERMINAL_GROWTH, _dcf_value
     fcf0, wacc = 100.0, 0.08
     calculated = _dcf_value(fcf0, TERMINAL_GROWTH, wacc, years=10)
     expected = (fcf0 * (1 + TERMINAL_GROWTH)) / (wacc - TERMINAL_GROWTH)
@@ -207,24 +207,24 @@ def test_dcf_value_matches_gordon_growth_when_growth_equals_terminal():
 
 
 def test_estimate_wacc_returns_none_without_beta():
-    from reverse_dcf import estimate_wacc
+    from analysis.reverse_dcf import estimate_wacc
     assert estimate_wacc({"market_cap": 1e9}) is None
 
 
 def test_estimate_wacc_reasonable_range():
-    from reverse_dcf import estimate_wacc
+    from analysis.reverse_dcf import estimate_wacc
     wacc = estimate_wacc({"market_cap": 1e9, "beta": 1.2, "total_debt": 2e8})
     assert 0.03 < wacc < 0.20  # een WACC buiten dit bereik zou op een rekenfout wijzen
 
 
 def test_compute_reverse_dcf_missing_data_returns_clear_error():
-    from reverse_dcf import compute_reverse_dcf
+    from analysis.reverse_dcf import compute_reverse_dcf
     assert "error" in compute_reverse_dcf({"market_cap": 1e9})  # geen FCF, geen beta
     assert "error" in compute_reverse_dcf({"market_cap": 1e9, "beta": 1.2})  # geen FCF
 
 
 def test_compute_reverse_dcf_realistic_case():
-    from reverse_dcf import compute_reverse_dcf
+    from analysis.reverse_dcf import compute_reverse_dcf
     result = compute_reverse_dcf({
         "market_cap": 12_300_000_000, "total_debt": 3_000_000_000,
         "total_cash": 900_000_000, "free_cashflow": 433_000_000, "beta": 1.6,
@@ -236,7 +236,7 @@ def test_compute_reverse_dcf_realistic_case():
 # ---------- altman_z.py ----------
 
 def test_altman_z_healthy_company_is_safe_zone():
-    from altman_z import compute_altman_z
+    from analysis.altman_z import compute_altman_z
     sec_result = {"annual_facts": {
         "Assets": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 100_000_000_000}],
         "Liabilities": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 30_000_000_000}],
@@ -252,7 +252,7 @@ def test_altman_z_healthy_company_is_safe_zone():
 
 
 def test_altman_z_distressed_company_is_risk_zone():
-    from altman_z import compute_altman_z
+    from analysis.altman_z import compute_altman_z
     sec_result = {"annual_facts": {
         "Assets": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 5_000_000_000}],
         "Liabilities": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 4_500_000_000}],
@@ -268,12 +268,12 @@ def test_altman_z_distressed_company_is_risk_zone():
 
 
 def test_altman_z_missing_sec_data_returns_error():
-    from altman_z import compute_altman_z
+    from analysis.altman_z import compute_altman_z
     assert "error" in compute_altman_z({"error": "geen data"}, {"market_cap": 1e9})
 
 
 def test_altman_z_missing_tag_returns_clear_error():
-    from altman_z import compute_altman_z
+    from analysis.altman_z import compute_altman_z
     sec_result = {"annual_facts": {"Assets": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 1e9}]}}
     result = compute_altman_z(sec_result, {"market_cap": 1e9})
     assert "error" in result
@@ -282,7 +282,7 @@ def test_altman_z_missing_tag_returns_clear_error():
 # ---------- consistency_check.py ----------
 
 def test_consistency_check_catches_real_alcoa_style_mismatch():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {
         "sec_free_cashflow": {"fiscal_year": 2025, "value": 433_000_000},
         "sec_operating_margin": {"fiscal_year": 2025, "value": 0.059},
@@ -296,7 +296,7 @@ def test_consistency_check_catches_real_alcoa_style_mismatch():
 
 
 def test_consistency_check_passes_correct_text():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {
         "sec_free_cashflow": {"fiscal_year": 2025, "value": 433_000_000},
         "sec_operating_margin": {"fiscal_year": 2025, "value": 0.059},
@@ -309,7 +309,7 @@ def test_consistency_check_catches_real_googl_style_small_margin_gap():
     """Reproduceert de echte GOOGL-bug: 34,0% genoemd in de tekst terwijl de
     geverifieerde waarde 32,03% was -- een gat van ~2 procentpunt dat de
     oude 5-procentpunt-tolerantie zou hebben gemist."""
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {"sec_operating_margin": {"fiscal_year": 2025, "value": 0.3203}}
     text = "The verified operating margin for FY2025 stands at 34.0%."
     issues = check_output_consistency(text, verified_metrics)
@@ -317,21 +317,21 @@ def test_consistency_check_catches_real_googl_style_small_margin_gap():
 
 
 def test_consistency_check_ignores_small_rounding_differences():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {"sec_operating_margin": {"fiscal_year": 2025, "value": 0.3203}}
     text = "Operating margin was approximately 32.0% in FY2025."
     assert check_output_consistency(text, verified_metrics) == []
 
 
 def test_consistency_check_handles_empty_metrics():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     assert check_output_consistency("Some report text.", {}) == []
 
 
 # ---------- financial_model.py ----------
 
 def test_project_scenario_computes_correct_math_with_derived_inputs():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {"sec_result": {"annual_facts": {
         "Revenues": [
             {"fiscal_year": 2023, "period_end": "2023-12-31", "value": 10_000_000_000},
@@ -370,7 +370,7 @@ def test_project_scenario_computes_correct_math_with_derived_inputs():
 
 
 def test_project_scenario_falls_back_gracefully_without_history():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 5_000_000_000}],
     }}}
@@ -385,7 +385,7 @@ def test_project_scenario_falls_back_gracefully_without_history():
 
 
 def test_project_scenario_without_sec_data_returns_error():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     result = project_scenario(
         {"scenario_name": "base", "revenue_growth_pct": 5, "operating_margin_pct": 10, "capex_pct_of_revenue": 5},
         {"sec_result": {"error": "geen data"}},
@@ -394,7 +394,7 @@ def test_project_scenario_without_sec_data_returns_error():
 
 
 def test_project_scenario_caps_years_at_maximum():
-    from financial_model import project_scenario, MAX_PROJECTION_YEARS
+    from analysis.financial_model import project_scenario, MAX_PROJECTION_YEARS
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 1_000_000_000}],
     }}}
@@ -407,7 +407,7 @@ def test_project_scenario_caps_years_at_maximum():
 
 
 def test_project_scenario_adds_market_comparison_for_base_case_with_large_gap():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {
         "sec_result": {"annual_facts": {
             "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 1_000_000_000}],
@@ -423,7 +423,7 @@ def test_project_scenario_adds_market_comparison_for_base_case_with_large_gap():
 
 
 def test_project_scenario_no_market_comparison_for_non_base_scenarios():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {
         "sec_result": {"annual_facts": {
             "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 1_000_000_000}],
@@ -438,7 +438,7 @@ def test_project_scenario_no_market_comparison_for_non_base_scenarios():
 
 
 def test_project_scenario_no_market_comparison_without_reverse_dcf():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 1_000_000_000}],
     }}}
@@ -450,7 +450,7 @@ def test_project_scenario_no_market_comparison_without_reverse_dcf():
 
 
 def test_derive_model_inputs_clips_extreme_working_capital_intensity():
-    from financial_model import _derive_model_inputs
+    from analysis.financial_model import _derive_model_inputs
     context = {"sec_result": {"annual_facts": {
         "Revenues": [
             {"fiscal_year": 2023, "period_end": "2023-12-31", "value": 1_000_000_000},
@@ -504,7 +504,7 @@ def test_extract_annual_series_rejects_quarter_mislabeled_as_fy():
     assert series[0]["value"] == 265595000000
 
 def test_compute_sensitivity_ranks_higher_impact_assumption_first():
-    from financial_model import compute_sensitivity
+    from analysis.financial_model import compute_sensitivity
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 10_000_000_000}],
     }}}
@@ -519,7 +519,7 @@ def test_compute_sensitivity_ranks_higher_impact_assumption_first():
 
 
 def test_compute_sensitivity_propagates_error_without_sec_data():
-    from financial_model import compute_sensitivity
+    from analysis.financial_model import compute_sensitivity
     result = compute_sensitivity(
         {"scenario_name": "base", "revenue_growth_pct": 5, "operating_margin_pct": 10, "capex_pct_of_revenue": 5},
         {"sec_result": {"error": "geen data"}},
@@ -707,7 +707,7 @@ def test_render_milestone_progress_produces_output():
 # ---------- financial_model.py: kans-gewogen verwachte FCF ----------
 
 def test_probability_weighted_fcf_computed_after_all_three_scenarios():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 10_000_000_000}],
     }}}
@@ -722,7 +722,7 @@ def test_probability_weighted_fcf_computed_after_all_three_scenarios():
 
 
 def test_probability_weighting_warns_when_probabilities_dont_sum_to_100():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 10_000_000_000}],
     }}}
@@ -734,7 +734,7 @@ def test_probability_weighting_warns_when_probabilities_dont_sum_to_100():
 
 
 def test_no_probability_weighting_without_probability_pct():
-    from financial_model import project_scenario
+    from analysis.financial_model import project_scenario
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 10_000_000_000}],
     }}}
@@ -836,7 +836,7 @@ def _make_fake_client(response_texts):
 
 
 def test_assess_with_consistency_takes_median_of_three_samples():
-    from self_consistency import assess_with_consistency
+    from analysis.self_consistency import assess_with_consistency
     client = _make_fake_client([
         '{"score": 2, "rationale": "Zwakke moat"}',
         '{"score": 4, "rationale": "Sterke moat"}',
@@ -848,7 +848,7 @@ def test_assess_with_consistency_takes_median_of_three_samples():
 
 
 def test_assess_with_consistency_survives_one_failed_sample():
-    from self_consistency import assess_with_consistency
+    from analysis.self_consistency import assess_with_consistency
     client = _make_fake_client([
         "Dit is geen geldige JSON.",
         '{"score": 4, "rationale": "A"}',
@@ -861,7 +861,7 @@ def test_assess_with_consistency_survives_one_failed_sample():
 
 def test_assess_with_consistency_returns_error_when_all_samples_fail():
     from unittest.mock import MagicMock
-    from self_consistency import assess_with_consistency
+    from analysis.self_consistency import assess_with_consistency
     client = MagicMock()
     client.messages.create = lambda **kwargs: (_ for _ in ()).throw(Exception("API-fout"))
     result = assess_with_consistency(client, "Hoe sterk is de moat?", "context", 1, 5)
@@ -869,7 +869,7 @@ def test_assess_with_consistency_returns_error_when_all_samples_fail():
 
 
 def test_assess_with_consistency_clips_scores_to_scale():
-    from self_consistency import assess_with_consistency
+    from analysis.self_consistency import assess_with_consistency
     client = _make_fake_client([
         '{"score": 99, "rationale": "buiten schaal"}',
         '{"score": 3, "rationale": "binnen schaal"}',
@@ -880,7 +880,7 @@ def test_assess_with_consistency_clips_scores_to_scale():
 
 
 def test_extract_json_block_handles_preamble_text():
-    from self_consistency import _extract_json_block
+    from analysis.self_consistency import _extract_json_block
     text = 'Ik denk dat de score als volgt is: {"score": 4, "rationale": "test"}'
     parsed = _extract_json_block(text)
     assert parsed == {"score": 4, "rationale": "test"}
@@ -889,7 +889,7 @@ def test_extract_json_block_handles_preamble_text():
 # ---------- forensics.py: nieuwe voorberekende cijfers ----------
 
 def test_verified_metrics_yoy_growth_prevents_real_dal_bug():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {
         "Revenues": [
             {"fiscal_year": 2024, "period_end": "2024-12-31", "value": 60_000_000_000},
@@ -906,7 +906,7 @@ def test_verified_metrics_yoy_growth_prevents_real_dal_bug():
 
 
 def test_verified_metrics_ebitda_and_leverage_ratios():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {
         "OperatingIncomeLoss": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 5_824_000_000}],
         "DepreciationDepletionAndAmortization": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 3_000_000_000}],
@@ -924,7 +924,7 @@ def test_verified_metrics_ebitda_and_leverage_ratios():
 
 
 def test_verified_metrics_missing_data_gracefully_omits_fields():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     metrics = compute_verified_metrics({"annual_facts": {}}, {})
     assert "sec_ebitda" not in metrics
     assert "sec_revenue_yoy_growth" not in metrics
@@ -933,7 +933,7 @@ def test_verified_metrics_missing_data_gracefully_omits_fields():
 # ---------- peer_analysis.py ----------
 
 def test_peer_comparison_computes_premium_discount():
-    from peer_analysis import compute_peer_comparison
+    from analysis.peer_analysis import compute_peer_comparison
     company_data = {"trailing_pe": 10.0, "ev_to_ebitda": 6.0, "profit_margins": 0.08, "return_on_equity": 0.15}
     peer_data = {
         "PEER1": {"trailing_pe": 12.0, "ev_to_ebitda": 7.0, "profit_margins": 0.10, "return_on_equity": 0.12},
@@ -946,7 +946,7 @@ def test_peer_comparison_computes_premium_discount():
 
 
 def test_peer_comparison_excludes_failed_peers():
-    from peer_analysis import compute_peer_comparison
+    from analysis.peer_analysis import compute_peer_comparison
     company_data = {"trailing_pe": 10.0}
     peer_data = {"PEER1": {"trailing_pe": 12.0}, "PEER2": {"error": "kon data niet ophalen"}}
     result = compute_peer_comparison(company_data, peer_data)
@@ -954,12 +954,12 @@ def test_peer_comparison_excludes_failed_peers():
 
 
 def test_peer_comparison_without_peer_data():
-    from peer_analysis import compute_peer_comparison
+    from analysis.peer_analysis import compute_peer_comparison
     assert "error" in compute_peer_comparison({"trailing_pe": 10.0}, None)
 
 
 def test_peer_comparison_without_peer_data_field_overlap():
-    from peer_analysis import compute_peer_comparison
+    from analysis.peer_analysis import compute_peer_comparison
     result = compute_peer_comparison({"trailing_pe": None}, {"PEER1": {"trailing_pe": 12.0}})
     assert "error" in result
 
@@ -1120,7 +1120,7 @@ def test_fetch_insider_transactions_unknown_ticker():
 # ---------- forensics.py: meerjarige CAGR ----------
 
 def test_compute_verified_metrics_includes_multi_year_cagr():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {"Revenues": [
         {"fiscal_year": 2021, "period_end": "2021-12-31", "value": 1_000_000_000},
         {"fiscal_year": 2022, "period_end": "2022-12-31", "value": 1_200_000_000},
@@ -1137,7 +1137,7 @@ def test_compute_verified_metrics_includes_multi_year_cagr():
 
 
 def test_compute_verified_metrics_skips_cagr_with_too_few_years():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {"Revenues": [
         {"fiscal_year": 2024, "period_end": "2024-12-31", "value": 1_000_000_000},
         {"fiscal_year": 2025, "period_end": "2025-12-31", "value": 1_100_000_000},
@@ -1282,7 +1282,7 @@ def test_process_urls_deduplicates_by_url(tmp_path, monkeypatch):
 # ---------- forensics.py: cash conversion cycle / ROIC / DuPont ----------
 
 def test_verified_metrics_cash_conversion_cycle():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {
         "Revenues": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 100_000_000}],
         "GrossProfit": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 40_000_000}],
@@ -1297,7 +1297,7 @@ def test_verified_metrics_cash_conversion_cycle():
 
 
 def test_verified_metrics_roic_vs_wacc():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {
         "OperatingIncomeLoss": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 20_000_000}],
         "Assets": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 200_000_000}],
@@ -1311,7 +1311,7 @@ def test_verified_metrics_roic_vs_wacc():
 
 
 def test_verified_metrics_dupont_decomposition_matches_roe():
-    from forensics import compute_verified_metrics
+    from analysis.forensics import compute_verified_metrics
     sec_result = {"annual_facts": {
         "NetIncomeLoss": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 12_000_000}],
         "Revenues": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 100_000_000}],
@@ -1329,7 +1329,7 @@ def test_verified_metrics_dupont_decomposition_matches_roe():
 # ---------- piotroski_score.py ----------
 
 def test_piotroski_score_computes_expected_criteria():
-    from piotroski_score import compute_piotroski_score
+    from analysis.piotroski_score import compute_piotroski_score
     sec_result = {"annual_facts": {
         "NetIncomeLoss": [{"fiscal_year": 2024, "period_end": "2024-12-31", "value": 8_000_000},
                           {"fiscal_year": 2025, "period_end": "2025-12-31", "value": 12_000_000}],
@@ -1358,19 +1358,19 @@ def test_piotroski_score_computes_expected_criteria():
 
 
 def test_piotroski_score_missing_data_returns_error():
-    from piotroski_score import compute_piotroski_score
+    from analysis.piotroski_score import compute_piotroski_score
     assert "error" in compute_piotroski_score({"annual_facts": {}})
 
 
 def test_piotroski_score_without_sec_data():
-    from piotroski_score import compute_piotroski_score
+    from analysis.piotroski_score import compute_piotroski_score
     assert "error" in compute_piotroski_score({"error": "geen data"})
 
 
 # ---------- reverse_dcf.py: intrinsic value (section-18-only) ----------
 
 def test_intrinsic_value_higher_growth_gives_higher_value():
-    from reverse_dcf import compute_intrinsic_value_estimate
+    from analysis.reverse_dcf import compute_intrinsic_value_estimate
     company_data = {
         "market_cap": 12_300_000_000, "total_debt": 3_000_000_000, "total_cash": 900_000_000,
         "free_cashflow": 433_000_000, "beta": 1.6, "shares_outstanding": 180_000_000,
@@ -1381,7 +1381,7 @@ def test_intrinsic_value_higher_growth_gives_higher_value():
 
 
 def test_intrinsic_value_includes_premium_discount_when_price_given():
-    from reverse_dcf import compute_intrinsic_value_estimate
+    from analysis.reverse_dcf import compute_intrinsic_value_estimate
     company_data = {
         "market_cap": 12_300_000_000, "total_debt": 3_000_000_000, "total_cash": 900_000_000,
         "free_cashflow": 433_000_000, "beta": 1.6, "shares_outstanding": 180_000_000,
@@ -1392,7 +1392,7 @@ def test_intrinsic_value_includes_premium_discount_when_price_given():
 
 
 def test_intrinsic_value_missing_shares_outstanding_returns_error():
-    from reverse_dcf import compute_intrinsic_value_estimate
+    from analysis.reverse_dcf import compute_intrinsic_value_estimate
     company_data = {
         "market_cap": 12_300_000_000, "total_debt": 3_000_000_000, "total_cash": 900_000_000,
         "free_cashflow": 433_000_000, "beta": 1.6, "shares_outstanding": None,
@@ -1402,7 +1402,7 @@ def test_intrinsic_value_missing_shares_outstanding_returns_error():
 
 
 def test_intrinsic_value_negative_fcf_returns_error():
-    from reverse_dcf import compute_intrinsic_value_estimate
+    from analysis.reverse_dcf import compute_intrinsic_value_estimate
     company_data = {
         "market_cap": 12_300_000_000, "total_debt": 3_000_000_000, "total_cash": 900_000_000,
         "free_cashflow": -50_000_000, "beta": 1.6, "shares_outstanding": 180_000_000,
@@ -1715,7 +1715,7 @@ def test_run_analysis_recovers_from_degenerate_tool_use_response():
 def test_monte_carlo_simulation_produces_sensible_distribution():
     import random
     random.seed(42)
-    from financial_model import run_monte_carlo_simulation
+    from analysis.financial_model import run_monte_carlo_simulation
     context = {"sec_result": {"annual_facts": {
         "Revenues": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 12_830_000_000}],
     }}}
@@ -1731,13 +1731,13 @@ def test_monte_carlo_simulation_produces_sensible_distribution():
 
 
 def test_monte_carlo_simulation_missing_revenue_returns_error():
-    from financial_model import run_monte_carlo_simulation
+    from analysis.financial_model import run_monte_carlo_simulation
     result = run_monte_carlo_simulation({"bear": {}, "base": {}, "bull": {}}, {"sec_result": {"error": "test"}})
     assert "error" in result
 
 
 def test_monte_carlo_simulation_invalid_input_returns_error():
-    from financial_model import run_monte_carlo_simulation
+    from analysis.financial_model import run_monte_carlo_simulation
     context = {"sec_result": {"annual_facts": {"Revenues": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 1000}]}}}
     result = run_monte_carlo_simulation({"bear": {"revenue_growth_pct": 1}, "base": {}, "bull": {}}, context)
     assert "error" in result
@@ -1807,7 +1807,7 @@ def test_render_html_includes_lineage_section():
 def test_monte_carlo_histogram_sums_to_n_simulations():
     import random
     random.seed(7)
-    from financial_model import run_monte_carlo_simulation
+    from analysis.financial_model import run_monte_carlo_simulation
     context = {"sec_result": {"annual_facts": {"Revenues": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 12_830_000_000}]}}}
     result = run_monte_carlo_simulation({
         "bear": {"revenue_growth_pct": -5, "operating_margin_pct": 8, "capex_pct_of_revenue": 6},
@@ -1952,7 +1952,7 @@ def test_consistency_check_catches_real_leu_style_net_debt_ebitda_bug():
     """Reproduceert de echte LEU-bug: het bedrijf had een netto-kaspositie
     (geverifieerd cijfer is NEGATIEF), maar de tekst noemde een positieve
     8.82x -- wiskundig onmogelijk, moet gevangen worden."""
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {"sec_net_debt_to_ebitda": -3.44}
     text = "The company reports a net debt/EBITDA of 8.82x, which appears elevated."
     issues = check_output_consistency(text, verified_metrics)
@@ -1961,14 +1961,14 @@ def test_consistency_check_catches_real_leu_style_net_debt_ebitda_bug():
 
 
 def test_consistency_check_ignores_small_ratio_rounding():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {"sec_net_debt_to_ebitda": 1.05}
     text = "Net debt/EBITDA stands at approximately 1.1x."
     assert check_output_consistency(text, verified_metrics) == []
 
 
 def test_consistency_check_net_debt_ebitda_absent_when_not_verified():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     assert check_output_consistency("Net debt/EBITDA is 8.82x.", {}) == []
 
 
@@ -2148,7 +2148,7 @@ def test_consistency_check_catches_fabricated_peer_comparison_even_with_empty_me
     en (2) de check moet dit ALSNOG vangen ook al is verified_metrics leeg
     (zoals bij OKLO, waar Altman/Piotroski/reverse-DCF allemaal 'niet
     mogelijk' waren) -- de vroege return mocht deze check niet overslaan."""
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     text = (
         'Some text.\n```chart\n'
         '{"type": "radar", "axes": ["A", "B"], '
@@ -2161,7 +2161,7 @@ def test_consistency_check_catches_fabricated_peer_comparison_even_with_empty_me
 
 
 def test_consistency_check_allows_peer_comparison_when_peers_supplied():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     text = (
         '```chart\n{"type": "radar", "axes": ["A"], '
         '"series": [{"name": "Company", "values": [1]}, {"name": "Peer Average", "values": [2]}]}\n```'
@@ -2170,7 +2170,7 @@ def test_consistency_check_allows_peer_comparison_when_peers_supplied():
 
 
 def test_consistency_check_allows_single_series_radar_without_peers():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     text = '```chart\n{"type": "radar", "axes": ["A"], "series": [{"name": "Company", "values": [1]}]}\n```'
     assert check_output_consistency(text, {}, peers=None) == []
 
@@ -2255,7 +2255,7 @@ def test_render_data_table_omits_footnote_div_when_absent():
 # ---------- consistency_check.py: uitgebreide zelfverzin-audit (7 nieuwe cijfers) ----------
 
 def test_consistency_check_catches_all_seven_new_metric_mismatches():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {
         "sec_net_margin": {"fiscal_year": 2025, "value": 0.10},
         "sec_revenue_yoy_growth": {"fiscal_year": 2025, "value": 0.05},
@@ -2280,7 +2280,7 @@ def test_consistency_check_new_metrics_no_false_positive_when_correct():
     gebaseerde zoekopdracht pikte per ongeluk een percentage van een
     naburige, andere metric op. Gefixt door alleen de dichtstbijzijnde
     match te gebruiken."""
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {
         "sec_net_margin": {"fiscal_year": 2025, "value": 0.10},
         "sec_roic_vs_wacc_spread": -0.02,
@@ -2294,7 +2294,7 @@ def test_consistency_check_recognizes_negative_percentages():
     """Reproduceert een echte bug: PERCENT_PATTERN herkende geen leidend
     minteken, waardoor '-60.5%' als '60.5%' werd gelezen -- relevant voor
     elk verlieslatend bedrijf (bijv. OKLO's -60.5% operating margin)."""
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     verified_metrics = {"sec_operating_margin": {"fiscal_year": 2025, "value": -0.605}}
     assert check_output_consistency("Operating margin was -60.5%.", verified_metrics) == []
     issues = check_output_consistency("Operating margin was 60.5%.", verified_metrics)
@@ -2305,7 +2305,7 @@ def test_check_ratio_metric_handles_bare_number_and_dict_shapes():
     """sec_interest_coverage_ratio/sec_normalized_ev_to_ebitda zijn kale
     getallen; sec_net_margin etc. zijn dicts met een 'value'-sleutel --
     beide vormen moeten correct worden uitgelezen."""
-    from consistency_check import _extract_metric_value
+    from analysis.consistency_check import _extract_metric_value
     assert _extract_metric_value({"sec_interest_coverage_ratio": 5.2}, "sec_interest_coverage_ratio") == 5.2
     assert _extract_metric_value({"sec_net_margin": {"value": 0.1}}, "sec_net_margin") == 0.1
     assert _extract_metric_value({}, "sec_net_margin") is None
@@ -2314,7 +2314,7 @@ def test_check_ratio_metric_handles_bare_number_and_dict_shapes():
 # ---------- forensics.py: SPAC-fusiejaar-vlag (echte OKLO/LEU-bug) ----------
 
 def test_forensic_flags_catches_operating_vs_net_income_sign_divergence():
-    from forensics import compute_forensic_flags
+    from analysis.forensics import compute_forensic_flags
     sec_result = {"annual_facts": {
         "OperatingIncomeLoss": [
             {"fiscal_year": 2022, "period_end": "2022-12-31", "value": -10_000_000},
@@ -2332,7 +2332,7 @@ def test_forensic_flags_catches_operating_vs_net_income_sign_divergence():
 
 
 def test_forensic_flags_no_sign_divergence_flag_when_same_sign():
-    from forensics import compute_forensic_flags
+    from analysis.forensics import compute_forensic_flags
     sec_result = {"annual_facts": {
         "OperatingIncomeLoss": [{"fiscal_year": 2023, "period_end": "2023-12-31", "value": -16_000_000}],
         "NetIncomeLoss": [{"fiscal_year": 2023, "period_end": "2023-12-31", "value": -32_200_000}],
@@ -2342,7 +2342,7 @@ def test_forensic_flags_no_sign_divergence_flag_when_same_sign():
 
 
 def test_forensic_flags_ignores_small_sign_divergence():
-    from forensics import compute_forensic_flags
+    from analysis.forensics import compute_forensic_flags
     sec_result = {"annual_facts": {
         "OperatingIncomeLoss": [{"fiscal_year": 2023, "period_end": "2023-12-31", "value": -100_000}],
         "NetIncomeLoss": [{"fiscal_year": 2023, "period_end": "2023-12-31", "value": 50_000}],
@@ -2582,7 +2582,7 @@ def test_consistency_check_catches_sensitivity_chart_mismatch():
     omzetgroei veel te lage waarden (~1.4M) t.o.v. wat de tool zelf
     berekende (~7.4-7.9M) -- en zette de rangschikking van impact
     daardoor op zijn kop."""
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     real_sensitivity_result = {
         "sensitivities": [
             {"assumption": "revenue_growth_pct", "direction": "omhoog", "fcf_change_final_year": -7891436},
@@ -2603,7 +2603,7 @@ def test_consistency_check_catches_sensitivity_chart_mismatch():
 
 
 def test_consistency_check_sensitivity_chart_no_false_positive_when_correct():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     real_sensitivity_result = {
         "sensitivities": [
             {"assumption": "revenue_growth_pct", "direction": "omhoog", "fcf_change_final_year": -7891436},
@@ -2618,7 +2618,7 @@ def test_consistency_check_sensitivity_chart_no_false_positive_when_correct():
 
 
 def test_consistency_check_sensitivity_chart_skipped_when_no_tool_result():
-    from consistency_check import check_output_consistency
+    from analysis.consistency_check import check_output_consistency
     text = (
         '```chart\n{"type": "heatmap", "title": "Test", "rows": ["Revenue growth"], '
         '"cols": ["Downside", "Upside"], "values": [[-1, 1]]}\n```'
@@ -2658,7 +2658,7 @@ def test_fit_gaussian_hmm_recovers_known_regime_change():
     haalt zonder een compiler te vereisen (hmmlearn kon niet builden op
     Python 3.14 zonder Visual C++ Build Tools)."""
     import numpy as np
-    from simple_hmm import fit_gaussian_hmm
+    from analysis.simple_hmm import fit_gaussian_hmm
 
     np.random.seed(10)
     calm_returns = np.random.normal(0.0003, 0.008, 200)
@@ -2678,7 +2678,7 @@ def test_fit_gaussian_hmm_recovers_known_regime_change():
 
 def test_fit_gaussian_hmm_rejects_too_few_observations():
     import numpy as np
-    from simple_hmm import fit_gaussian_hmm
+    from analysis.simple_hmm import fit_gaussian_hmm
     try:
         fit_gaussian_hmm(np.array([0.01, 0.02, 0.03]), n_states=2)
         assert False, "had een ValueError moeten geven"
@@ -2688,7 +2688,7 @@ def test_fit_gaussian_hmm_rejects_too_few_observations():
 
 def test_fit_gaussian_hmm_three_states_uses_all_states():
     import numpy as np
-    from simple_hmm import fit_gaussian_hmm
+    from analysis.simple_hmm import fit_gaussian_hmm
     np.random.seed(5)
     returns = np.concatenate([
         np.random.normal(0.001, 0.006, 150),

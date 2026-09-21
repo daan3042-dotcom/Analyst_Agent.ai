@@ -25,7 +25,7 @@ minder betekenisvol (activa/omzet-verhoudingen werken daar anders). Dat
 nemen we mee als disclaimer, niet als reden om de score te verbergen.
 """
 
-from forensics import _pick_revenue_series
+from analysis.forensics import _pick_revenue_series
 
 
 def _latest(series):

@@ -15,7 +15,7 @@ benoemen), of "flag" (concreet signaal, mogelijk een data-kwaliteitskwestie).
 """
 
 
-from reverse_dcf import estimate_wacc
+from analysis.reverse_dcf import estimate_wacc
 
 
 def _latest_two(series: list[dict]) -> tuple[dict, dict] | None:

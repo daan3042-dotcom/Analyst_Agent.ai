@@ -18,7 +18,7 @@ Gebruik:
 import os
 import sys
 
-from forensics import compute_verified_metrics
+from analysis.forensics import compute_verified_metrics
 from data.sec_data import fetch_sec_financials
 from track_record import TRACK_RECORD_DIR, _evaluate_operator, _load_raw
 

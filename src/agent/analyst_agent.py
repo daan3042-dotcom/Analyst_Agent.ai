@@ -41,14 +41,14 @@ from data.data_fetch import (
     fetch_historical_volatility,
     fetch_peer_data,
 )
-from altman_z import compute_altman_z
-from piotroski_score import compute_piotroski_score
-from consistency_check import check_output_consistency
+from analysis.altman_z import compute_altman_z
+from analysis.piotroski_score import compute_piotroski_score
+from analysis.consistency_check import check_output_consistency
 from data.finra_data import fetch_short_interest
-from forensics import compute_forensic_flags, compute_verified_metrics
+from analysis.forensics import compute_forensic_flags, compute_verified_metrics
 from data.fred_data import fetch_macro_snapshot
 from data.fmp_data import fetch_fmp_financials
-from reverse_dcf import compute_intrinsic_value_estimate, compute_reverse_dcf
+from analysis.reverse_dcf import compute_intrinsic_value_estimate, compute_reverse_dcf
 from data.sec_data import fetch_insider_transactions, fetch_sec_financials
 from framework.framework import (
     EXECUTIVE_SUMMARY_SYSTEM_PROMPT,
@@ -62,7 +62,7 @@ from framework.framework import (
     build_review_prompt,
     build_revision_prompt,
 )
-from peer_analysis import compute_peer_comparison
+from analysis.peer_analysis import compute_peer_comparison
 from lineage import build_lineage_manifest
 from render import get_brand_colors, render_html
 from track_record import load_previous_report, save_report_snapshot
