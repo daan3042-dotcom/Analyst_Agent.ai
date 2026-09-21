@@ -3,13 +3,13 @@
 Ordered roughly by what makes sense to tackle first — not a strict
 priority ranking beyond item 1.
 
-## 1. Subfolder reorganization of `src/`
+## 1. Subfolder reorganization of `src/` — DONE
 
-The first thing to do in this repository. See
+Executed incrementally, one subpackage per commit with the full test
+suite green after each step, as this item asked. See
 `docs/decisions/ADR-005-flat-layout-for-initial-migration.md` for why it
 wasn't done during the initial migration, and `docs/architecture.md`
-for the target structure. Do this incrementally (one subpackage at a
-time), running the full test suite after each step.
+for the resulting structure and module map.
 
 ## 2. Verify `finra_data.py` against live data
 
