@@ -1,0 +1,20 @@
+# Kernafhankelijkheden -- gecontroleerd tegen de daadwerkelijke imports in src/,
+# niet uit het hoofd opgeschreven.
+anthropic
+requests
+numpy
+yfinance
+chromadb
+pdfplumber
+trafilatura
+youtube-transcript-api
+
+# Alleen voor tests
+pytest
+
+# BEWUST NIET hier: sentence-transformers, scikit-learn, scipy, hmmlearn,
+# voyageai (SDK-package). Zie docs/decisions/ADR-003-http-api-over-sdk-for-native-deps.md
+# voor waarom -- deze zijn vervangen door directe HTTP-aanroepen (requests)
+# of een eigen, pure-NumPy implementatie, specifiek om een Windows-
+# beveiligingsbeleid (Smart App Control) te omzeilen dat gecompileerde
+# afhankelijkheden blokkeerde.
