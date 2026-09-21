@@ -591,12 +591,13 @@ def _render_gauge(chart: dict) -> str:
         )
         prev_max = zone_max
 
+    note_html = f'<p class="gauge-note">{note}</p>' if note else ""
     return (
         f'<div class="chart-block"><div class="chart-title">{title}</div>'
         f'<div class="gauge-track">{"".join(zone_segments)}'
         f'<div class="gauge-marker" style="left:{position_pct:.1f}%;"></div></div>'
         f'<div class="gauge-value">{value}</div>'
-        f'{f"<p class=\"gauge-note\">{note}</p>" if note else ""}'
+        f'{note_html}'
         f'</div>'
     )
 
