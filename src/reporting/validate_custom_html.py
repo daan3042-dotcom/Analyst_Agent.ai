@@ -10,7 +10,7 @@ vaste weergave (zie render.py's _render_chart).
 
 import re
 
-from color_safety import contrast_ratio
+from reporting.color_safety import contrast_ratio
 
 # CSS/HTML-patronen die een los component buiten zijn eigen vakje kunnen
 # laten breken, of die simpelweg niet in een los ingesloten stukje HTML

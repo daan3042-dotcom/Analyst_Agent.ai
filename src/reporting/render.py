@@ -1185,7 +1185,7 @@ def _render_custom(chart: dict) -> str:
     geslaagde validatie (validate_custom_html.py). Bij afkeuring wordt het
     component stilzwijgend overgeslagen (lege string) i.p.v. onveilige of
     kapotte HTML door te laten -- de tekst eromheen blijft gewoon staan."""
-    from validate_custom_html import validate_custom_html
+    from reporting.validate_custom_html import validate_custom_html
 
     html_content = chart.get("html", "")
     check = validate_custom_html(html_content)

@@ -63,8 +63,8 @@ from framework.framework import (
     build_revision_prompt,
 )
 from analysis.peer_analysis import compute_peer_comparison
-from lineage import build_lineage_manifest
-from render import get_brand_colors, render_html
+from reporting.lineage import build_lineage_manifest
+from reporting.render import get_brand_colors, render_html
 from track_record import load_previous_report, save_report_snapshot
 from framework.tools import ALL_TOOLS, run_tool
 
