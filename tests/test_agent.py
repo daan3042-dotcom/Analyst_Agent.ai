@@ -23,8 +23,8 @@ from render import (
     _sign_class,
     _split_into_sections,
 )
-from framework import REPORT_SECTIONS
-from tools import ALL_TOOLS, run_tool
+from framework.framework import REPORT_SECTIONS
+from framework.tools import ALL_TOOLS, run_tool
 from data_fetch import fetch_recent_news
 
 
@@ -1927,7 +1927,7 @@ def test_rolling_beta_handles_fetch_failure():
 # ---------- framework.py: risico-blokken in de prompt ----------
 
 def test_build_analysis_prompt_includes_risk_metric_blocks():
-    from framework import build_analysis_prompt
+    from framework.framework import build_analysis_prompt
     var_result = {"var_1day_95pct_pct": 5.82, "var_1day_99pct_pct": 8.23, "var_1month_95pct_pct": 26.69}
     sharpe_result = {"sharpe_ratio": -1.29, "sortino_ratio": -1.25, "risk_free_rate_pct_used": 4.3}
     beta_result = {"dates": ["2025-01-01"], "betas": [1.4], "benchmark": "S&P 500 (^GSPC)", "window_days": 90}
@@ -1939,7 +1939,7 @@ def test_build_analysis_prompt_includes_risk_metric_blocks():
 
 
 def test_build_analysis_prompt_omits_risk_blocks_when_unavailable():
-    from framework import build_analysis_prompt
+    from framework.framework import build_analysis_prompt
     prompt = build_analysis_prompt({"ticker": "TEST"}, None, "", None, None, None, None, None, None, None, None,
                                      None, None, {"error": "x"}, {"error": "x"}, {"error": "x"})
     assert "RISICO-GEWOGEN RENDEMENTSMAATSTAVEN" not in prompt
@@ -2020,7 +2020,7 @@ def test_regime_detection_handles_fetch_failure():
 
 
 def test_build_analysis_prompt_includes_regime_block():
-    from framework import build_analysis_prompt
+    from framework.framework import build_analysis_prompt
     regime_result = {
         "current_regime": "onrustig/hoog-volatiel", "days_in_current_regime": 42,
         "regime_stats": {

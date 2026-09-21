@@ -50,7 +50,7 @@ from fred_data import fetch_macro_snapshot
 from fmp_data import fetch_fmp_financials
 from reverse_dcf import compute_intrinsic_value_estimate, compute_reverse_dcf
 from sec_data import fetch_insider_transactions, fetch_sec_financials
-from framework import (
+from framework.framework import (
     EXECUTIVE_SUMMARY_SYSTEM_PROMPT,
     REVIEW_SYSTEM_PROMPT_COMPLETENESS,
     REVIEW_SYSTEM_PROMPT_CROSSREF,
@@ -66,7 +66,7 @@ from peer_analysis import compute_peer_comparison
 from lineage import build_lineage_manifest
 from render import get_brand_colors, render_html
 from track_record import load_previous_report, save_report_snapshot
-from tools import ALL_TOOLS, run_tool
+from framework.tools import ALL_TOOLS, run_tool
 
 MODEL = "claude-sonnet-4-6"
 MAX_RETRIES = 3
