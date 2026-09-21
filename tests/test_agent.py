@@ -967,18 +967,18 @@ def test_peer_comparison_without_peer_data_field_overlap():
 # ---------- track_record.py ----------
 
 def test_extract_section_17_finds_content():
-    from track_record import _extract_section_17
+    from tracking.track_record import _extract_section_17
     text = "16. Devil's Advocate\nx\n\n17. Monitoring & Kill-Criteria\nLet op deze 3 dingen: A, B, C.\n"
     assert _extract_section_17(text) == "Let op deze 3 dingen: A, B, C."
 
 
 def test_extract_section_17_returns_none_when_absent():
-    from track_record import _extract_section_17
+    from tracking.track_record import _extract_section_17
     assert _extract_section_17("1. Company Overview\ntest") is None
 
 
 def test_save_and_load_report_snapshot_roundtrip(tmp_path, monkeypatch):
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     text = "17. Monitoring & Kill-Criteria\nWaarschuwing: let op X.\n"
     track_record.save_report_snapshot("TEST", text, {"sec_operating_margin": {"fiscal_year": 2025, "value": 0.1}})
@@ -988,7 +988,7 @@ def test_save_and_load_report_snapshot_roundtrip(tmp_path, monkeypatch):
 
 
 def test_load_previous_report_returns_none_when_absent(tmp_path, monkeypatch):
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     assert track_record.load_previous_report("NIETBESTAAND") is None
 
@@ -996,7 +996,7 @@ def test_load_previous_report_returns_none_when_absent(tmp_path, monkeypatch):
 def test_save_report_snapshot_preserves_full_history(tmp_path, monkeypatch):
     """DD's derde verzoek: elke run toevoegen aan een geschiedenis i.p.v.
     de vorige overschrijven -- basis voor een toekomstige kalibratiescore."""
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     track_record.save_report_snapshot("TEST", "17. Monitoring & Kill-Criteria\nEerste run.\n", {"sec_ebitda": 100})
     track_record.save_report_snapshot("TEST", "17. Monitoring & Kill-Criteria\nTweede run.\n", {"sec_ebitda": 200})
@@ -1018,7 +1018,7 @@ def test_track_record_reads_old_single_dict_file_format(tmp_path, monkeypatch):
     omzetten naar een geschiedenis."""
     import json
     import os
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     os.makedirs("track_record", exist_ok=True)
     with open("track_record/OLD.json", "w", encoding="utf-8") as f:
@@ -2728,7 +2728,7 @@ def test_compute_regime_detection_works_without_hmmlearn():
 # ---------- track_record.py: kalibratiescore ----------
 
 def test_extract_structured_kill_criteria_finds_mapped_criteria_only():
-    from track_record import _extract_structured_kill_criteria
+    from tracking.track_record import _extract_structured_kill_criteria
     text = (
         "17. Monitoring & Kill-Criteria\nSome prose.\n\n"
         '```chart\n{"type": "kill-criteria-recap", "criteria": ['
@@ -2742,12 +2742,12 @@ def test_extract_structured_kill_criteria_finds_mapped_criteria_only():
 
 
 def test_extract_structured_kill_criteria_empty_when_no_chart():
-    from track_record import _extract_structured_kill_criteria
+    from tracking.track_record import _extract_structured_kill_criteria
     assert _extract_structured_kill_criteria("17. Monitoring & Kill-Criteria\nGeen grafiek.") == []
 
 
 def test_evaluate_operator_all_directions():
-    from track_record import _evaluate_operator
+    from tracking.track_record import _evaluate_operator
     assert _evaluate_operator(0.05, "<", 0.08) is True
     assert _evaluate_operator(0.10, "<", 0.08) is False
     assert _evaluate_operator(0.10, ">", 0.08) is True
@@ -2762,7 +2762,7 @@ def test_compute_calibration_score_across_multiple_tickers(tmp_path, monkeypatch
     niet meetelt (TSLA)."""
     import json
     import os
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     os.makedirs("track_record", exist_ok=True)
 
@@ -2794,14 +2794,14 @@ def test_compute_calibration_score_across_multiple_tickers(tmp_path, monkeypatch
 
 
 def test_compute_calibration_score_empty_when_no_track_record_dir(tmp_path, monkeypatch):
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     result = track_record.compute_calibration_score()
     assert result == {"total_checkable_criteria": 0, "held": 0, "breached": 0, "details": []}
 
 
 def test_save_report_snapshot_includes_structured_kill_criteria(tmp_path, monkeypatch):
-    import track_record
+    import tracking.track_record as track_record
     monkeypatch.chdir(tmp_path)
     text = (
         "17. Monitoring & Kill-Criteria\nProse.\n\n"
@@ -2971,7 +2971,7 @@ def test_check_ticker_detects_breached_criterion(tmp_path, monkeypatch):
     import json
     import os
     from unittest.mock import patch
-    import monitor_kill_criteria as mkc
+    import tracking.monitor_kill_criteria as mkc
     monkeypatch.chdir(tmp_path)
     os.makedirs("track_record", exist_ok=True)
     with open("track_record/TEST.json", "w") as f:
@@ -2990,7 +2990,7 @@ def test_check_ticker_detects_breached_criterion(tmp_path, monkeypatch):
         ],
         "OperatingIncomeLoss": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 55_000_000}],
     }}
-    with patch("monitor_kill_criteria.fetch_sec_financials", return_value=fake_sec_result):
+    with patch("tracking.monitor_kill_criteria.fetch_sec_financials", return_value=fake_sec_result):
         findings = mkc.check_ticker("TEST")
     assert len(findings) == 1
     assert findings[0]["breached"] is True
@@ -3000,7 +3000,7 @@ def test_check_ticker_detects_held_criterion(tmp_path, monkeypatch):
     import json
     import os
     from unittest.mock import patch
-    import monitor_kill_criteria as mkc
+    import tracking.monitor_kill_criteria as mkc
     monkeypatch.chdir(tmp_path)
     os.makedirs("track_record", exist_ok=True)
     with open("track_record/TEST.json", "w") as f:
@@ -3019,14 +3019,14 @@ def test_check_ticker_detects_held_criterion(tmp_path, monkeypatch):
         ],
         "OperatingIncomeLoss": [{"fiscal_year": 2025, "period_end": "2025-12-31", "value": 150_000_000}],  # ~13.6% margin, houdt stand
     }}
-    with patch("monitor_kill_criteria.fetch_sec_financials", return_value=fake_sec_result):
+    with patch("tracking.monitor_kill_criteria.fetch_sec_financials", return_value=fake_sec_result):
         findings = mkc.check_ticker("TEST")
     assert len(findings) == 1
     assert findings[0]["breached"] is False
 
 
 def test_check_ticker_empty_when_no_history(tmp_path, monkeypatch):
-    import monitor_kill_criteria as mkc
+    import tracking.monitor_kill_criteria as mkc
     monkeypatch.chdir(tmp_path)
     assert mkc.check_ticker("NIETBESTAAND") == []
 
@@ -3034,7 +3034,7 @@ def test_check_ticker_empty_when_no_history(tmp_path, monkeypatch):
 def test_check_ticker_empty_when_no_structured_criteria(tmp_path, monkeypatch):
     import json
     import os
-    import monitor_kill_criteria as mkc
+    import tracking.monitor_kill_criteria as mkc
     monkeypatch.chdir(tmp_path)
     os.makedirs("track_record", exist_ok=True)
     with open("track_record/TEST.json", "w") as f:
@@ -3043,7 +3043,7 @@ def test_check_ticker_empty_when_no_structured_criteria(tmp_path, monkeypatch):
 
 
 def test_main_reports_no_data_when_track_record_missing(tmp_path, monkeypatch, capsys):
-    import monitor_kill_criteria as mkc
+    import tracking.monitor_kill_criteria as mkc
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("sys.argv", ["monitor_kill_criteria.py"])
     mkc.main()

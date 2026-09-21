@@ -65,7 +65,7 @@ from framework.framework import (
 from analysis.peer_analysis import compute_peer_comparison
 from reporting.lineage import build_lineage_manifest
 from reporting.render import get_brand_colors, render_html
-from track_record import load_previous_report, save_report_snapshot
+from tracking.track_record import load_previous_report, save_report_snapshot
 from framework.tools import ALL_TOOLS, run_tool
 
 MODEL = "claude-sonnet-4-6"
