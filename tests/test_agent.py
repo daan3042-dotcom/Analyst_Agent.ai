@@ -1411,19 +1411,7 @@ def test_intrinsic_value_negative_fcf_returns_error():
     assert "error" in result
 
 
-# ---------- render.py: kill-criteria-recap + layout-verzoeken ----------
-
-def test_render_kill_criteria_recap_produces_output():
-    from reporting.render import _render_kill_criteria_recap
-    result = _render_kill_criteria_recap({"criteria": ["Drempel A", "Drempel B"]})
-    assert "kill-criteria-recap" in result
-    assert "Drempel A" in result and "Drempel B" in result
-
-
-def test_render_kill_criteria_recap_empty_list_returns_empty():
-    from reporting.render import _render_kill_criteria_recap
-    assert _render_kill_criteria_recap({"criteria": []}) == ""
-
+# ---------- render.py: layout-verzoeken ----------
 
 def test_executive_summary_and_issues_render_after_sections():
     from reporting.render import render_html

@@ -1010,30 +1010,6 @@ def _render_regime_timeline(chart: dict) -> str:
     )
 
 
-def _render_kill_criteria_recap(chart: dict) -> str:
-    """Compacte, kleine afsluitende opsomming van de concrete kill-criteria
-    onderaan sectie 17 -- een geheugensteun met de exacte drempelwaarden,
-    apart van de doorlopende tekst erboven, zodat je 'm niet kan missen bij
-    een snelle herlezing.
-
-    Elk element in 'criteria' mag ofwel een losse string zijn (oude vorm,
-    en kwalitatieve criteria die niet aan een cijfer te koppelen zijn), ofwel
-    een object {"description": ..., "metric_key": ..., ...} (nieuwe,
-    machine-checkbare vorm) -- hier tonen we in beide gevallen alleen de
-    leesbare omschrijving; de machine-checkbare velden worden apart, uit de
-    ruwe chart-JSON, gebruikt door track_record.py voor een toekomstige
-    kalibratiescore, niet hier in de weergave."""
-    descriptions = []
-    for c in chart.get("criteria", []):
-        text = c.get("description", "") if isinstance(c, dict) else str(c)
-        if text.strip():
-            descriptions.append(html.escape(text))
-    if not descriptions:
-        return ""
-    items = "".join(f"<li>{c}</li>" for c in descriptions)
-    return f'<div class="chart-block kill-criteria-recap"><div class="kcr-label">Kill-criteria op een rij</div><ol>{items}</ol></div>'
-
-
 def _render_quote_block(chart: dict) -> str:
     """Een uitgelicht citaat (bijv. management-guidance of een treffende
     uitspraak uit een earnings call) -- groter en editorialer dan 'callout',
@@ -1221,7 +1197,6 @@ def _render_chart(chart: dict) -> str:
         "donut": _render_donut,
         "quote-block": _render_quote_block,
         "milestone-progress": _render_milestone_progress,
-        "kill-criteria-recap": _render_kill_criteria_recap,
         "distribution": _render_distribution,
         "regime-timeline": _render_regime_timeline,
         "fact-sheet": _render_fact_sheet,
@@ -1595,34 +1570,6 @@ def render_html(ticker: str, long_name: str, timestamp_str: str,
     line-height: 1.6;
   }}
   .issues li {{ margin-bottom: 6px; }}
-
-  .kill-criteria-recap {{
-    background: #fff;
-    border: 1px solid var(--border, #DDD5C4);
-    border-left: 3px solid var(--brand-2, #A6402F);
-    border-radius: 4px;
-    padding: 16px 20px;
-    margin: 20px 0;
-    max-width: 740px;
-  }}
-  .kcr-label {{
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--ink-soft);
-    margin-bottom: 8px;
-  }}
-  .kill-criteria-recap ol {{
-    margin: 0;
-    padding-left: 18px;
-  }}
-  .kill-criteria-recap li {{
-    font-size: 0.92rem;
-    line-height: 1.5;
-    margin-bottom: 6px;
-    color: var(--ink);
-  }}
 
   /* Distribution: Monte Carlo-uitkomstverdeling als vereenvoudigde box-plot */
   .distribution-chart {{
