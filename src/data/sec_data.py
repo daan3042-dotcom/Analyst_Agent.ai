@@ -23,10 +23,7 @@ from datetime import date
 
 import requests
 
-# BELANGRIJK, DD: vul hier een echt contactadres in (jouw e-mail of TCE's) --
-# SEC vraagt dit expliciet, en een generiek/vals adres kan leiden tot een
-# blokkade van je IP-adres door hun systeem.
-USER_AGENT = "TCE Financial Analyst Agent your-email@example.com"
+USER_AGENT = "TCE Financial Analyst Agent bufkes101221@gmail.com"
 
 TICKER_MAP_CACHE = "sec_ticker_map.json"
 

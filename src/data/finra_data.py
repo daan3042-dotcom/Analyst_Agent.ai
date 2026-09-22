@@ -20,7 +20,7 @@ veldherkenning misgrijpt."""
 
 import requests
 
-USER_AGENT = "TCE Financial Analyst Agent your-email@example.com"
+USER_AGENT = "TCE Financial Analyst Agent bufkes101221@gmail.com"
 METADATA_URL = "https://api.finra.org/metadata/group/otcMarket/name/equityShortInterestStandardized"
 DATA_URL = "https://api.finra.org/data/group/otcMarket/name/equityShortInterestStandardized"
 
