@@ -26,12 +26,17 @@ ticker, surfaced automatically on a re-analysis — e.g. "operating margin
 11.2% → 14.8%, 2 forensic flags resolved, net debt down $200M." Discussed
 and wanted; not yet designed or built.
 
-## 4. Schedule `monitor_kill_criteria.py`
+## 4. Schedule `monitor_kill_criteria.py` — DONE
 
-Currently a manually-run script. Wiring it into a scheduler (cron, n8n,
-or similar) so it runs automatically (e.g. weekly) across the whole
-tracked portfolio was discussed as a natural next step but never
-attempted.
+Wired into Windows Task Scheduler (DD's actual dev machine, per
+CLAUDE.md) rather than cron/n8n — `track_record/` is gitignored,
+machine-local state, so this has to run where that data actually lives,
+not in CI. See `scripts/run_kill_criteria_monitor.ps1` (the wrapper that
+sets the working directory and logs output) and
+`scripts/register_kill_criteria_task.ps1` (one-time setup, weekly
+trigger). Output goes to `logs/kill_criteria/` (gitignored), not just
+the console, so an unattended run is actually reviewable afterward. See
+the README's "Scheduling the kill-criteria monitor" section for usage.
 
 ## 5. A visible "data quality scorecard"
 

@@ -73,6 +73,28 @@ held vs. were breached):
 python src/tracking/track_record.py
 ```
 
+### Scheduling the kill-criteria monitor (Windows)
+
+`monitor_kill_criteria.py` needs `track_record/` on disk, so it has to
+run on the same machine that holds it — it can't run in CI. `scripts/`
+has a PowerShell wrapper + a Task Scheduler registration script for a
+weekly, unattended run:
+
+```powershell
+# One-time setup (creates/updates the scheduled task; defaults to every
+# Monday 08:00):
+.\scripts\register_kill_criteria_task.ps1
+
+# What that task actually runs, and what you can also run by hand:
+.\scripts\run_kill_criteria_monitor.ps1
+```
+
+Each run's output goes to `logs/kill_criteria/<timestamp>.log`, plus a
+`logs/kill_criteria/latest.log` that always holds the most recent run —
+`logs/` isn't committed to git. See the comment header in
+`register_kill_criteria_task.ps1` for how to unregister the task, and
+how to make it run even while logged out.
+
 ## Library / knowledge base
 
 Drop PDFs into `library/pdfs/` and URLs (articles or YouTube videos) into
