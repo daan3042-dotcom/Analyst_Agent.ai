@@ -18,9 +18,15 @@ Gebruik:
 import os
 import sys
 
-from forensics import compute_verified_metrics
-from sec_data import fetch_sec_financials
-from track_record import TRACK_RECORD_DIR, _evaluate_operator, _load_raw
+if __name__ == "__main__":
+    # Zorgt dat "python src/tracking/monitor_kill_criteria.py" blijft werken
+    # nu dit bestand in een subpakket zit: src/ (de ouder van tracking/)
+    # moet op sys.path staan voor de package-imports hieronder.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from analysis.forensics import compute_verified_metrics
+from data.sec_data import fetch_sec_financials
+from tracking.track_record import TRACK_RECORD_DIR, _evaluate_operator, _load_raw
 
 
 def check_ticker(ticker: str) -> list[dict]:

@@ -4,9 +4,11 @@
 
 ## Current architecture
 
-See `docs/architecture.md`. Flat `src/` layout (see
-`docs/decisions/ADR-005-flat-layout-for-initial-migration.md`), 27 Python
-modules plus a test suite.
+See `docs/architecture.md`. `src/` is split into subpackages (`agent/`,
+`framework/`, `data/`, `analysis/`, `knowledge/`, `reporting/`,
+`tracking/`) — see `docs/decisions/ADR-005-flat-layout-for-initial-migration.md`
+for why it started flat and the reorg commit history for how the split
+was done, 27 Python modules plus a test suite.
 
 ## Completed
 
@@ -40,14 +42,11 @@ modules plus a test suite.
 
 - `finra_data.py` (short interest) is unverified against live data — see
   `docs/data-sources.md`.
-- See `docs/roadmap.md` item 1 — the `src/` subfolder reorganization is
-  outstanding.
 
 ## Next priorities
 
 1. Verify `finra_data.py` against real tickers.
-2. Reorganize `src/` into subpackages (incrementally, test-verified).
-3. Pick up an item from `docs/roadmap.md` — the "what changed since last
+2. Pick up an item from `docs/roadmap.md` — the "what changed since last
    analysis" diff is likely the highest-value next feature.
 
 ## Open questions needing the project owner's input

@@ -1126,6 +1126,8 @@ def build_analysis_prompt(company_data: dict, peer_data: dict | None,
     else:
         peer_comparison_block = ""
 
+    extra_context_block = f"=== EXTRA CONTEXT VAN DD ===\n{extra_context}" if extra_context else ""
+
     prompt = f"""Maak een grondige deep-dive analyse van het volgende bedrijf, \
 volgens exact deze {len(REPORT_SECTIONS)} secties:
 
@@ -1169,7 +1171,7 @@ volgens exact deze {len(REPORT_SECTIONS)} secties:
 
 {peer_comparison_block}
 
-{f"=== EXTRA CONTEXT VAN DD ===\n{extra_context}" if extra_context else ""}
+{extra_context_block}
 
 Schrijf voor elke sectie minimaal 2-4 alinea's, met concrete cijfers uit de data \
 waar mogelijk. Sluit af met sectie 18. Gebruik geen markdown-headers zoals #, \

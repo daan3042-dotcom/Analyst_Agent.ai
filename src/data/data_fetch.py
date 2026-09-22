@@ -183,7 +183,7 @@ def compute_regime_detection(ticker: str, period: str = "3y", n_states: int = 2)
     (99 van de 100 dagen correct geclassificeerd)."""
     try:
         import numpy as np
-        from simple_hmm import fit_gaussian_hmm
+        from analysis.simple_hmm import fit_gaussian_hmm
     except ImportError as e:
         return {"error": f"kon numpy niet laden: {e}"}
 

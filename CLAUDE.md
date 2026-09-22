@@ -41,37 +41,45 @@ instead should be treated as a regression, not a simplification.
    check in `consistency_check.py` that verifies the final text/chart
    against the actual value — not only a stronger prompt instruction.
 
-## Where to find things (current, flat `src/` layout — see note below)
+## Where to find things (`src/` subpackage layout)
 
 | Looking for... | File |
 |---|---|
-| Pipeline orchestration | `src/analyst_agent.py` |
-| The 18-section prompt & writing rules | `src/framework.py` |
-| Tools Claude can call | `src/tools.py` |
-| HTML rendering / chart types | `src/render.py` |
-| SEC financials + insider transactions | `src/sec_data.py` |
-| Non-US financials fallback | `src/fmp_data.py` |
-| Macro data | `src/fred_data.py` |
-| Market data, VaR/Sharpe/beta/regime/options | `src/data_fetch.py` |
-| Short interest | `src/finra_data.py` |
-| Forensic checks + verified metrics | `src/forensics.py` |
-| Output-vs-reality consistency checks | `src/consistency_check.py` |
-| Scenario/sensitivity/Monte Carlo | `src/financial_model.py` |
-| Per-ticker history + calibration score | `src/track_record.py` |
-| Standalone kill-criteria monitor | `src/monitor_kill_criteria.py` |
-| Library/RAG search | `src/library_search.py`, `src/library_index.py` |
+| Pipeline orchestration | `src/agent/analyst_agent.py` |
+| The 18-section prompt & writing rules | `src/framework/framework.py` |
+| Tools Claude can call | `src/framework/tools.py` |
+| HTML rendering / chart types | `src/reporting/render.py` |
+| SEC financials + insider transactions | `src/data/sec_data.py` |
+| Non-US financials fallback | `src/data/fmp_data.py` |
+| Macro data | `src/data/fred_data.py` |
+| Market data, VaR/Sharpe/beta/regime/options | `src/data/data_fetch.py` |
+| Short interest | `src/data/finra_data.py` |
+| Forensic checks + verified metrics | `src/analysis/forensics.py` |
+| Output-vs-reality consistency checks | `src/analysis/consistency_check.py` |
+| Scenario/sensitivity/Monte Carlo | `src/analysis/financial_model.py` |
+| Source-provenance ("lineage") manifest | `src/reporting/lineage.py` |
+| Per-ticker history + calibration score | `src/tracking/track_record.py` |
+| Standalone kill-criteria monitor | `src/tracking/monitor_kill_criteria.py` |
+| Library/RAG search | `src/knowledge/library_search.py`, `src/knowledge/library_index.py` |
 | Tests | `tests/test_agent.py` |
 | Architecture decisions (the "why") | `docs/decisions/` |
 | Full architecture | `docs/architecture.md` |
 | Current status / open items | `docs/project-state.md` |
 
-**Note on the flat layout:** `src/` is currently flat (all files are
-siblings, using plain imports like `from data_fetch import ...`) — not
-yet split into the `src/agent/`, `src/data/`, `src/analysis/` subfolders
-described in `docs/architecture.md`'s target structure. That split is a
-deliberately deferred first task (see `docs/roadmap.md`) — it touches
-every file's imports, and was left for a dedicated, test-verified Claude
-Code session rather than done blind during the initial migration.
+`src/` is split into subpackages (`agent/`, `framework/`, `data/`,
+`analysis/`, `knowledge/`, `reporting/`, `tracking/`) with real internal
+imports (e.g. `from data.data_fetch import ...`), matching
+`docs/architecture.md`'s target structure. This was previously a flat
+layout with plain imports (`from data_fetch import ...`) — see
+`docs/decisions/ADR-005-flat-layout-for-initial-migration.md` for why
+that was the deliberate starting point, and the reorg commits on top of
+it for how the split was executed (incrementally, one subpackage per
+commit, full test suite green after each). The four scripts meant to be
+run directly (`agent/analyst_agent.py`, `tracking/track_record.py`,
+`tracking/monitor_kill_criteria.py`, `knowledge/library_index.py`) each
+carry a small `sys.path` shim so `python src/<subpkg>/<file>.py` keeps
+working exactly as documented in `README.md`, without requiring `-m`
+invocation or a manually-set `PYTHONPATH`.
 
 ## Before making a change
 

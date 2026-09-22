@@ -29,7 +29,7 @@ Net als bij Altman Z: oorspronkelijk gevalideerd op industriële/waarde-
 aandelen, minder betekenisvol bij financiële instellingen.
 """
 
-from forensics import _latest_two, _pick_revenue_series
+from analysis.forensics import _latest_two, _pick_revenue_series
 
 
 def compute_piotroski_score(sec_result: dict) -> dict:

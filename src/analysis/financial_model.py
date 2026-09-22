@@ -47,7 +47,7 @@ def _get_base_revenue(context: dict) -> float | None:
     primaire bron). Geeft None terug als die data niet beschikbaar is
     (bijv. bij een niet-Amerikaanse notering) -- geen gok, een duidelijk
     'kan niet' in plaats daarvan."""
-    from forensics import _pick_revenue_series
+    from analysis.forensics import _pick_revenue_series
 
     sec_result = context.get("sec_result") or {}
     facts = sec_result.get("annual_facts", {})
@@ -64,7 +64,7 @@ def _derive_model_inputs(context: dict, base_revenue: float) -> dict:
     schuld, en de impliciete rentevoet daarop. Elke afgeleide waarde heeft
     een expliciete terugvalwaarde als de brondata ontbreekt -- nooit een
     crash, wel een transparante aanname."""
-    from forensics import _pick_revenue_series
+    from analysis.forensics import _pick_revenue_series
 
     sec_result = context.get("sec_result") or {}
     facts = sec_result.get("annual_facts", {})

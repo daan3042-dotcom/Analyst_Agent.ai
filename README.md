@@ -51,8 +51,8 @@ Required API keys (see `.env.example`): `ANTHROPIC_API_KEY`,
 ## Usage
 
 ```bash
-python src/analyst_agent.py TICKER
-python src/analyst_agent.py TICKER --peers PEER1 PEER2
+python src/agent/analyst_agent.py TICKER
+python src/agent/analyst_agent.py TICKER --peers PEER1 PEER2
 ```
 
 Reports are written to `output/`. Per-ticker analysis history (used for
@@ -63,14 +63,14 @@ To check whether a previously-analyzed company's kill-criteria have
 since been breached, without generating a full report:
 
 ```bash
-python src/monitor_kill_criteria.py [TICKER]
+python src/tracking/monitor_kill_criteria.py [TICKER]
 ```
 
 To see the cross-report calibration score (how often past kill-criteria
 held vs. were breached):
 
 ```bash
-python src/track_record.py
+python src/tracking/track_record.py
 ```
 
 ## Library / knowledge base
@@ -79,7 +79,7 @@ Drop PDFs into `library/pdfs/` and URLs (articles or YouTube videos) into
 `library/urls.txt`, then run:
 
 ```bash
-python src/library_index.py
+python src/knowledge/library_index.py
 ```
 
 This builds a semantic search index Claude can query during analysis.

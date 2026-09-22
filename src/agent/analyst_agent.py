@@ -23,9 +23,15 @@ import sys
 import time
 from datetime import datetime
 
+if __name__ == "__main__":
+    # Zorgt dat "python src/agent/analyst_agent.py" blijft werken nu dit
+    # bestand in een subpakket zit: src/ (de ouder van agent/) moet op
+    # sys.path staan voor de package-imports hieronder (data.data_fetch e.d.).
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import anthropic
 
-from data_fetch import (
+from data.data_fetch import (
     compute_options_analysis,
     compute_regime_detection,
     compute_rolling_beta,
@@ -35,16 +41,16 @@ from data_fetch import (
     fetch_historical_volatility,
     fetch_peer_data,
 )
-from altman_z import compute_altman_z
-from piotroski_score import compute_piotroski_score
-from consistency_check import check_output_consistency
-from finra_data import fetch_short_interest
-from forensics import compute_forensic_flags, compute_verified_metrics
-from fred_data import fetch_macro_snapshot
-from fmp_data import fetch_fmp_financials
-from reverse_dcf import compute_intrinsic_value_estimate, compute_reverse_dcf
-from sec_data import fetch_insider_transactions, fetch_sec_financials
-from framework import (
+from analysis.altman_z import compute_altman_z
+from analysis.piotroski_score import compute_piotroski_score
+from analysis.consistency_check import check_output_consistency
+from data.finra_data import fetch_short_interest
+from analysis.forensics import compute_forensic_flags, compute_verified_metrics
+from data.fred_data import fetch_macro_snapshot
+from data.fmp_data import fetch_fmp_financials
+from analysis.reverse_dcf import compute_intrinsic_value_estimate, compute_reverse_dcf
+from data.sec_data import fetch_insider_transactions, fetch_sec_financials
+from framework.framework import (
     EXECUTIVE_SUMMARY_SYSTEM_PROMPT,
     REVIEW_SYSTEM_PROMPT_COMPLETENESS,
     REVIEW_SYSTEM_PROMPT_CROSSREF,
@@ -56,11 +62,11 @@ from framework import (
     build_review_prompt,
     build_revision_prompt,
 )
-from peer_analysis import compute_peer_comparison
-from lineage import build_lineage_manifest
-from render import get_brand_colors, render_html
-from track_record import load_previous_report, save_report_snapshot
-from tools import ALL_TOOLS, run_tool
+from analysis.peer_analysis import compute_peer_comparison
+from reporting.lineage import build_lineage_manifest
+from reporting.render import get_brand_colors, render_html
+from tracking.track_record import load_previous_report, save_report_snapshot
+from framework.tools import ALL_TOOLS, run_tool
 
 MODEL = "claude-sonnet-4-6"
 MAX_RETRIES = 3
