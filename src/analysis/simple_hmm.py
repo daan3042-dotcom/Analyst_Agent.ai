@@ -130,4 +130,5 @@ def fit_gaussian_hmm(observations: np.ndarray, n_states: int, n_iter: int = 200,
         "means": means.tolist(),
         "variances": variances.tolist(),
         "hidden_states": states.tolist(),
+        "transmat": transmat.tolist(),
     }

@@ -2048,6 +2048,42 @@ def test_render_regime_timeline_empty_history_returns_empty():
     assert _render_regime_timeline({"history": []}) == ""
 
 
+def test_render_regime_timeline_with_price_data_draws_price_chart_and_cards():
+    """Met price_tail/transition_matrix/regime_days erbij moet de nieuwe,
+    rijkere weergave verschijnen (koerslijn + regimevlakken + overgangs-
+    tabel + dagentelling) i.p.v. de kale stroken-tijdlijn."""
+    from reporting.render import _render_regime_timeline
+    history = ["kalm/laag-volatiel"] * 3 + ["onrustig/hoog-volatiel"] * 2
+    prices = [100.0, 101.0, 100.5, 102.0, 95.0, 90.0]  # 1 meer dan history
+    dates = ["2026-01-0" + str(i + 1) for i in range(6)]
+    chart = {
+        "title": "Regime laatste 5 handelsdagen",
+        "history": history,
+        "prices": prices,
+        "dates": dates,
+        "transition_matrix": {
+            "kalm/laag-volatiel": {"kalm/laag-volatiel": 0.9, "onrustig/hoog-volatiel": 0.1},
+            "onrustig/hoog-volatiel": {"kalm/laag-volatiel": 0.2, "onrustig/hoog-volatiel": 0.8},
+        },
+        "regime_days": {"kalm/laag-volatiel": 3, "onrustig/hoog-volatiel": 2},
+    }
+    result = _render_regime_timeline(chart)
+    assert "regime-segment" not in result  # oude kale strook is vervangen
+    assert "<svg" in result and "<polyline" in result
+    assert "regime-tm" in result and "0.90" in result and "0.80" in result
+    assert "3 dagen" in result and "2 dagen" in result
+
+
+def test_render_regime_timeline_price_length_mismatch_falls_back_to_strip():
+    """Als 'prices' niet exact 1 langer is dan 'history' (bijv. een fout
+    upstream), moet de renderer niet crashen maar terugvallen op de oude,
+    veilige stroken-tijdlijn."""
+    from reporting.render import _render_regime_timeline
+    history = ["kalm/laag-volatiel"] * 5
+    result = _render_regime_timeline({"history": history, "prices": [100.0, 101.0]})
+    assert result.count("regime-segment") == 5
+
+
 # ---------- render.py: radar en scatter (uit de visuele-bibliotheek-sessie) ----------
 
 def test_render_radar_produces_output_with_two_series():
@@ -2699,6 +2735,57 @@ def test_fit_gaussian_hmm_three_states_uses_all_states():
     assert len(set(result["hidden_states"])) == 3
     variances_sorted = sorted(result["variances"])
     assert variances_sorted[0] < variances_sorted[1] < variances_sorted[2]
+
+
+def test_fit_gaussian_hmm_returns_valid_transition_matrix():
+    """De overgangsmatrix moet meekomen in het resultaat (nodig voor de
+    regime-timeline-grafiek) en, als kansmatrix, rijsommen van ~1 hebben."""
+    import numpy as np
+    from analysis.simple_hmm import fit_gaussian_hmm
+
+    np.random.seed(10)
+    calm_returns = np.random.normal(0.0003, 0.008, 200)
+    turbulent_returns = np.random.normal(-0.001, 0.04, 100)
+    returns = np.concatenate([calm_returns, turbulent_returns])
+
+    result = fit_gaussian_hmm(returns, n_states=2)
+    transmat = result["transmat"]
+    assert len(transmat) == 2 and all(len(row) == 2 for row in transmat)
+    for row in transmat:
+        assert abs(sum(row) - 1.0) < 1e-6
+
+
+def test_compute_regime_detection_includes_transition_matrix_and_price_tail():
+    """compute_regime_detection moet nu ook de gefitte overgangsmatrix, de
+    koers/datum-staart en het aantal dagen per regime teruggeven -- nodig
+    voor de rijkere regime-timeline-grafiek in het rapport."""
+    from unittest.mock import patch
+    import pandas as pd
+    import numpy as np
+    from data.data_fetch import compute_regime_detection
+
+    np.random.seed(10)
+    calm_returns = np.random.normal(0.0003, 0.008, 200)
+    turbulent_returns = np.random.normal(-0.001, 0.04, 100)
+    all_returns = np.concatenate([calm_returns, turbulent_returns])
+    closes = 100 * np.cumprod(1 + all_returns)
+    dates = pd.date_range("2024-01-01", periods=len(closes), freq="B")
+    fake_hist = pd.DataFrame({"Close": closes}, index=dates)
+
+    with patch("data.data_fetch.yf.Ticker") as MockTicker:
+        MockTicker.return_value.history.return_value = fake_hist
+        result = compute_regime_detection("TEST", period="3y", n_states=2)
+
+    labels = set(result["regime_stats"].keys())
+    assert set(result["transition_matrix"].keys()) == labels
+    for from_label, to_probs in result["transition_matrix"].items():
+        assert set(to_probs.keys()) == labels
+        assert abs(sum(to_probs.values()) - 1.0) < 1e-3
+
+    tail_n = len(result["regime_history_tail"])
+    assert len(result["price_tail"]) == tail_n + 1
+    assert len(result["date_tail"]) == tail_n + 1
+    assert sum(result["regime_days_tail"].values()) == tail_n
 
 
 def test_compute_regime_detection_works_without_hmmlearn():

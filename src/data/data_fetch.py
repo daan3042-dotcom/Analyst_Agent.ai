@@ -190,6 +190,7 @@ def compute_regime_detection(ticker: str, period: str = "3y", n_states: int = 2)
     try:
         history = yf.Ticker(ticker).history(period=period)
         closes = history["Close"].tolist() if not history.empty else []
+        dates = [d.strftime("%Y-%m-%d") for d in history.index] if not history.empty else []
     except Exception:
         return {"error": f"kon historische koersdata niet ophalen voor {ticker}"}
 
@@ -230,6 +231,32 @@ def compute_regime_detection(ticker: str, period: str = "3y", n_states: int = 2)
             break
 
     regime_history = [state_to_label[int(s)] for s in hidden_states]
+    regime_history_tail = regime_history[-60:]  # laatste ~3 maanden, voor een tijdlijngrafiek
+
+    # Overgangsmatrix herordenen van de interne (willekeurige) toestand-
+    # volgorde naar de vol-gesorteerde label-volgorde, zodat 'm net als de
+    # rest van dit resultaat leesbaar is per label i.p.v. per interne index.
+    transmat = result["transmat"]
+    transition_matrix = {
+        state_to_label[order[i]]: {
+            state_to_label[order[j]]: round(transmat[order[i]][order[j]], 4)
+            for j in range(n_states)
+        }
+        for i in range(n_states)
+    }
+
+    # Koers + datum voor exact dezelfde staart als regime_history_tail --
+    # 1 koerspunt meer dan regimes (het regime van dag t hoort bij het
+    # rendement closes[t-1] -> closes[t], dus de staart heeft een extra
+    # "startkoers" nodig om elke regimeband tegen een koersbeweging af te
+    # kunnen zetten in de grafiek).
+    tail_n = len(regime_history_tail)
+    price_tail = closes[-(tail_n + 1):]
+    date_tail = dates[-(tail_n + 1):] if dates else []
+
+    regime_days_tail: dict = {}
+    for label in regime_history_tail:
+        regime_days_tail[label] = regime_days_tail.get(label, 0) + 1
 
     return {
         "current_regime": state_to_label[current_state],
@@ -242,7 +269,11 @@ def compute_regime_detection(ticker: str, period: str = "3y", n_states: int = 2)
             for i in range(n_states)
         },
         "n_observations": len(returns),
-        "regime_history_tail": regime_history[-60:],  # laatste ~3 maanden, voor een tijdlijngrafiek
+        "regime_history_tail": regime_history_tail,
+        "transition_matrix": transition_matrix,
+        "price_tail": price_tail,
+        "date_tail": date_tail,
+        "regime_days_tail": regime_days_tail,
     }
 
 

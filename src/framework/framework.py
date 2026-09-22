@@ -1035,17 +1035,30 @@ def build_analysis_prompt(company_data: dict, peer_data: dict | None,
             f"{s['annualized_return_pct']}% geannualiseerd rendement in deze toestand"
             for label, s in regime_result["regime_stats"].items()
         )
+        transition_lines = "\n".join(
+            f"  - vanuit {frm}: " + ", ".join(f"{to} {p * 100:.0f}%" for to, p in to_probs.items())
+            for frm, to_probs in regime_result.get("transition_matrix", {}).items()
+        )
+        days_line = ", ".join(f"{label}: {n}" for label, n in regime_result.get("regime_days_tail", {}).items())
         regime_block = (
             "=== REGIMEDETECTIE (AL BEREKEND IN CODE, Hidden Markov Model op de eigen "
             "rendementenreeks) -- VERPLICHT gebruiken in sectie 9 of 11 ===\n"
             f"- Huidig regime: {regime_result['current_regime']}, "
             f"al {regime_result['days_in_current_regime']} handelsdagen aaneengesloten\n"
             f"- Kenmerken per regime:\n{stats_lines}\n"
+            f"- Gefitte overgangswaarschijnlijkheden (transition_matrix, per regime naar elk ander "
+            f"regime):\n{transition_lines}\n"
+            f"- Dagen per regime in de laatste {len(regime_result['regime_history_tail'])} "
+            f"handelsdagen (regime_days_tail): {days_line}\n"
             f"- Regimegeschiedenis laatste {len(regime_result['regime_history_tail'])} handelsdagen "
             f"(voor een 'regime-timeline'-grafiek): {regime_result['regime_history_tail']}\n"
-            "Gebruik dit exacte, al berekende resultaat -- reken zelf geen regime uit. Dit is "
-            "een statistische inschatting op basis van de eigen koershistorie, geen voorspelling; "
-            "presenteer het als zodanig (wat de data tot nu toe laat zien, niet wat er gaat gebeuren)."
+            f"- Koers + datum voor diezelfde periode (price_tail/date_tail, 1 koerspunt meer dan "
+            f"regimes -- voor dezelfde grafiek): {regime_result.get('price_tail', [])} / "
+            f"{regime_result.get('date_tail', [])}\n"
+            "Gebruik dit exacte, al berekende resultaat -- reken zelf geen regime, kans of koers uit. "
+            "Dit is een statistische inschatting op basis van de eigen koershistorie, geen "
+            "voorspelling; presenteer het als zodanig (wat de data tot nu toe laat zien, niet wat er "
+            "gaat gebeuren)."
         )
     else:
         regime_block = ""
@@ -1346,9 +1359,9 @@ Type "distribution" (toon de uitkomst van de run_monte_carlo_simulation-tool als
 {{"type": "distribution", "title": "Jaar-5 FCF-verdeling (Monte Carlo, 5000 simulaties)", "target_metric": "Jaar-5 vrije kasstroom", "p10": 989000000, "p25": 1215000000, "median": 1484000000, "p75": 1787000000, "p90": 2067000000, "histogram_bin_centers": [500000000, 600000000, "..."], "histogram_counts": [1, 3, 8, "..."]}}
 ```
 
-Type "regime-timeline" (toon de regimegeschiedenis uit de HMM-regimedetectie als een gekleurde stroken-tijdlijn i.p.v. alleen het huidige regime te noemen -- gebruik de exacte regime_history_tail-lijst die al is meegegeven):
+Type "regime-timeline" (toon de regimegeschiedenis uit de HMM-regimedetectie als een koersgrafiek met gekleurde regime-vlakken, plus de gefitte overgangsmatrix en het aantal dagen per regime -- i.p.v. alleen het huidige regime te noemen. Gebruik UITSLUITEND de exacte, al berekende waarden die al zijn meegegeven: regime_history_tail (als "history"), price_tail (als "prices"), date_tail (als "dates"), transition_matrix en regime_days_tail (als "regime_days") -- reken zelf geen koers, kans of dag opnieuw uit. "prices" moet exact 1 element meer bevatten dan "history"):
 ```chart
-{{"type": "regime-timeline", "title": "Regime laatste 60 handelsdagen", "history": ["kalm/laag-volatiel", "kalm/laag-volatiel", "onrustig/hoog-volatiel", "..."]}}
+{{"type": "regime-timeline", "title": "Regime laatste 60 handelsdagen", "history": ["kalm/laag-volatiel", "kalm/laag-volatiel", "onrustig/hoog-volatiel", "..."], "prices": [312.41, 313.33, "..."], "dates": ["2026-08-06", "2026-08-07", "..."], "transition_matrix": {{"kalm/laag-volatiel": {{"kalm/laag-volatiel": 0.94, "onrustig/hoog-volatiel": 0.06}}, "onrustig/hoog-volatiel": {{"kalm/laag-volatiel": 0.08, "onrustig/hoog-volatiel": 0.92}}}}, "regime_days": {{"kalm/laag-volatiel": 40, "onrustig/hoog-volatiel": 20}}}}
 ```
 
 De volgende vijf types zijn TEKST-DRAGEND -- bedoeld om narratieve inhoud (geen pure cijfers) overzichtelijk te presenteren, in plaats van alles in lopende alinea's te proppen:

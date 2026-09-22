@@ -970,12 +970,130 @@ def _render_distribution(chart: dict) -> str:
     )
 
 
+def _render_regime_price_chart(prices: list, dates: list, history: list, color_map: dict) -> str:
+    """Koerslijn met een gekleurd vlak per regime erachter -- het regime van
+    dag t hoort bij het rendement closes[t-1] -> closes[t], dus dag 0 krijgt
+    (bij gebrek aan een eigen rendement) hetzelfde regime als dag 1, precies
+    zoals de HMM-decodering het al aan koers[1:] toekent."""
+    n_days = len(prices)
+    day_state = [history[0]] + [history[i - 1] for i in range(1, n_days)]
+
+    width, height = 600, 190
+    pad_l, pad_r, pad_t, pad_b = 46, 8, 10, 24
+    plot_w, plot_h = width - pad_l - pad_r, height - pad_t - pad_b
+    total_days = max(n_days - 1, 1)
+
+    p_min, p_max = min(prices), max(prices)
+    pad_v = (p_max - p_min) * 0.08 or max(p_max, 1) * 0.02
+    y_min, y_max = p_min - pad_v, p_max + pad_v
+    span = (y_max - y_min) or 1
+
+    def x(d):
+        return pad_l + (d / total_days) * plot_w
+
+    def y(p):
+        return pad_t + (1 - (p - y_min) / span) * plot_h
+
+    # opeenvolgende dagen met hetzelfde regime groeperen tot vlakken
+    bands, band_state, band_start = [], day_state[0], 0
+    for i in range(1, n_days + 1):
+        if i == n_days or day_state[i] != band_state:
+            bands.append((band_state, band_start, i))
+            if i < n_days:
+                band_state, band_start = day_state[i], i
+
+    band_rects = "".join(
+        f'<rect x="{x(start):.1f}" y="{pad_t}" width="{(x(end) - x(start)):.1f}" height="{plot_h}" '
+        f'fill="{color_map.get(state, "var(--ink-soft)")}" fill-opacity="0.14" />'
+        for state, start, end in bands
+    )
+
+    gridlines = []
+    for step in range(5):
+        val = y_min + span * (step / 4)
+        yy = y(val)
+        gridlines.append(f'<line x1="{pad_l}" y1="{yy:.1f}" x2="{width - pad_r}" y2="{yy:.1f}" stroke="var(--line, #DDD5C4)" stroke-width="1" />')
+        gridlines.append(f'<text x="{pad_l - 6}" y="{yy + 3:.1f}" font-size="9.5" text-anchor="end" fill="var(--ink-soft)">{val:.1f}</text>')
+
+    x_labels = []
+    if dates and len(dates) == n_days:
+        step = max(1, round(n_days / 6))
+        idxs = list(range(0, n_days, step))
+        if idxs[-1] != n_days - 1:
+            idxs.append(n_days - 1)
+        for i in idxs:
+            anchor = "start" if i == 0 else "end" if i == n_days - 1 else "middle"
+            x_labels.append(
+                f'<text x="{x(i):.1f}" y="{pad_t + plot_h + 16}" font-size="9.5" text-anchor="{anchor}" '
+                f'fill="var(--ink-soft)">{html.escape(str(dates[i]))}</text>'
+            )
+
+    points = " ".join(f"{x(i):.1f},{y(p):.1f}" for i, p in enumerate(prices))
+    last_x, last_y = x(n_days - 1), y(prices[-1])
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" style="max-width:{width}px;">'
+        f'{band_rects}{"".join(gridlines)}'
+        f'<polyline points="{points}" fill="none" stroke="var(--ink)" stroke-width="1.75" '
+        f'stroke-linejoin="round" stroke-linecap="round" />'
+        f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="3" fill="var(--ink)" />'
+        f'{"".join(x_labels)}'
+        f'</svg>'
+    )
+
+
+def _render_regime_transition_table(transition_matrix: dict, color_map: dict) -> str:
+    """Gefitte overgangsmatrix (deze run) als kleine tabel -- geen vaste
+    aanname, maar wat het HMM daadwerkelijk uit de koershistorie schatte."""
+    labels = list(transition_matrix.keys())
+    header = "".join(
+        f'<th style="color:{color_map.get(lbl, "var(--ink-soft)")};">{html.escape(str(lbl))}</th>'
+        for lbl in labels
+    )
+    rows = []
+    for from_label in labels:
+        to_probs = transition_matrix.get(from_label, {})
+        cells = "".join(
+            f'<td class="{"regime-diag" if from_label == to_label else ""}">{float(to_probs.get(to_label, 0)):.2f}</td>'
+            for to_label in labels
+        )
+        color = color_map.get(from_label, "var(--ink-soft)")
+        rows.append(f'<tr><td class="regime-rowhead" style="color:{color};">{html.escape(str(from_label))}</td>{cells}</tr>')
+    return (
+        '<div class="regime-card">'
+        '<div class="regime-card-title">Overgangswaarschijnlijkheden (gefit, deze run)</div>'
+        f'<table class="regime-tm"><tr><th></th>{header}</tr>{"".join(rows)}</table>'
+        '</div>'
+    )
+
+
+def _render_regime_days_list(regime_days: dict, total_days: int, color_map: dict) -> str:
+    """Aantal dagen per regime in het weergegeven venster, met percentage."""
+    rows = []
+    for label, count in regime_days.items():
+        pct = round(count / total_days * 100) if total_days else 0
+        color = color_map.get(label, "var(--ink-soft)")
+        rows.append(
+            '<div class="regime-dur-row">'
+            f'<span class="regime-dur-name"><span class="regime-swatch" style="background:{color};"></span>{html.escape(str(label))}</span>'
+            f'<span class="regime-dur-num">{count} dagen &middot; {pct}%</span>'
+            '</div>'
+        )
+    return (
+        '<div class="regime-card">'
+        f'<div class="regime-card-title">Dagen per regime (laatste {total_days} handelsdagen)</div>'
+        f'{"".join(rows)}</div>'
+    )
+
+
 def _render_regime_timeline(chart: dict) -> str:
-    """Toont de HMM-regimegeschiedenis als een compacte, gekleurde
-    stroken-tijdlijn -- elke dag een klein gekleurd blokje, kleur per
-    regime, met een legenda eronder. Vaste, semantische kleuren voor de
-    bekende regime-labels (kalm=groen-achtig, onrustig=rood-achtig),
-    zodat de kleur altijd hetzelfde betekent ongeacht welk bedrijf."""
+    """Toont de HMM-regimegeschiedenis als een koerslijn met een gekleurd
+    vlak per regime erachter, plus de gefitte overgangsmatrix en het aantal
+    dagen per regime -- i.p.v. alleen een kale stroken-tijdlijn. Vaste,
+    semantische kleuren voor de bekende regime-labels (kalm=groen-achtig,
+    onrustig=rood-achtig), zodat de kleur altijd hetzelfde betekent ongeacht
+    welk bedrijf. Valt terug op de oude stroken-tijdlijn als er geen
+    koersdata is meegegeven (bijv. een ouder chart-JSON-formaat)."""
     title = html.escape(chart.get("title", ""))
     history = chart.get("history", [])
     if not history:
@@ -992,20 +1110,39 @@ def _render_regime_timeline(chart: dict) -> str:
         if label not in color_map:
             color_map[label] = fallback_colors[i % len(fallback_colors)]
 
-    segments = "".join(
-        f'<div class="regime-segment" style="background:{color_map[label]};" title="{html.escape(str(label))}"></div>'
-        for label in history
-    )
+    prices = chart.get("prices", [])
+    dates = chart.get("dates", [])
+    chart_html = ""
+    if prices and len(prices) == len(history) + 1:
+        chart_html = _render_regime_price_chart(prices, dates, history, color_map)
+
+    if not chart_html:
+        segments = "".join(
+            f'<div class="regime-segment" style="background:{color_map[label]};" title="{html.escape(str(label))}"></div>'
+            for label in history
+        )
+        chart_html = f'<div class="regime-strip">{segments}</div>'
+
     legend = "".join(
         f'<div class="regime-legend-item"><span class="regime-swatch" style="background:{color_map[label]};"></span>{html.escape(str(label))}</div>'
         for label in unique_labels
     )
 
+    extra_cards = ""
+    transition_matrix = chart.get("transition_matrix")
+    if transition_matrix:
+        extra_cards += _render_regime_transition_table(transition_matrix, color_map)
+    regime_days = chart.get("regime_days")
+    if regime_days:
+        extra_cards += _render_regime_days_list(regime_days, len(history), color_map)
+    grid_html = f'<div class="regime-grid">{extra_cards}</div>' if extra_cards else ""
+
     title_html = f'<div class="chart-title">{title}</div>' if title else ""
     return (
         f'<div class="chart-block regime-timeline">{title_html}'
-        f'<div class="regime-strip">{segments}</div>'
+        f'{chart_html}'
         f'<div class="regime-legend">{legend}</div>'
+        f'{grid_html}'
         f'</div>'
     )
 
@@ -1697,6 +1834,33 @@ def render_html(ticker: str, long_name: str, timestamp_str: str,
   .regime-swatch {{
     display: inline-block; width: 12px; height: 12px; border-radius: 2px;
   }}
+  .regime-grid {{
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }}
+  @media (max-width: 640px) {{ .regime-grid {{ grid-template-columns: 1fr; }} }}
+  .regime-card {{
+    border: 1px solid var(--line, #DDD5C4);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }}
+  .regime-card-title {{ font-size: 0.8rem; color: var(--ink-soft); margin-bottom: 10px; }}
+  .regime-tm {{ width: 100%; border-collapse: collapse; }}
+  .regime-tm td, .regime-tm th {{
+    text-align: center; padding: 6px 4px; font-size: 0.78rem;
+  }}
+  .regime-tm th {{ color: var(--ink-soft); font-weight: 500; font-size: 0.72rem; }}
+  .regime-tm td.regime-rowhead {{ text-align: left; font-size: 0.72rem; padding-left: 2px; }}
+  .regime-tm td.regime-diag {{ font-weight: 600; }}
+  .regime-dur-row {{
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 0; border-bottom: 1px solid var(--line, #DDD5C4); font-size: 0.82rem;
+  }}
+  .regime-dur-row:last-child {{ border-bottom: none; }}
+  .regime-dur-name {{ display: flex; align-items: center; gap: 8px; }}
+  .regime-dur-num {{ color: var(--ink-soft); }}
   .radar-legend {{ display: flex; gap: 16px; margin-top: 8px; }}
   .radar-legend-item {{
     display: flex; align-items: center; gap: 6px;
