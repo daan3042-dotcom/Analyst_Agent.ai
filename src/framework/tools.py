@@ -12,6 +12,7 @@ op block.type == "tool_use"). Hij staat hier toch, omdat dit de plek is waar
 alle tool-definities samenkomen die je aan de Claude-call meegeeft.
 """
 
+from data.cftc_data import fetch_cftc_positioning
 from data.commodity_data import fetch_commodity_price, fetch_fx_rate
 from data.data_fetch import fetch_recent_news, compute_event_price_reaction
 from analysis.self_consistency import assess_with_consistency
@@ -229,6 +230,37 @@ COMMODITY_TOOL = {
     },
 }
 
+# Speculatieve futures-positionering (CFTC Commitments of Traders) -- relevant
+# voor sectie 8 (Commodity/Market Sensitivity), als aanvulling op de kale
+# grondstofprijs uit get_commodity_price: laat zien of speculanten momenteel
+# netto long of short zitten, en of dat een extreem/uitgerekt niveau is
+# (klassiek contraire-sentiment-signaal). Gebruikt dezelfde grondstoflijst
+# als get_commodity_price, dus geen aparte namenlijst voor Claude om te kennen.
+CFTC_TOOL = {
+    "name": "get_cftc_positioning",
+    "description": (
+        "Haal de meest recente speculatieve futures-positionering op (CFTC "
+        "Commitments of Traders) voor een grondstof die relevant is voor dit "
+        "bedrijf -- hoeveel van de open interest non-commercial (speculatieve) "
+        "partijen netto long of short zitten, en hoe groot dat is t.o.v. de "
+        "totale open interest. Gebruik dit ALLEEN als aanvulling op "
+        "get_commodity_price in sectie 8 (Commodity/Market Sensitivity), "
+        "wanneer het bedrijf materieel gevoelig is voor deze grondstofprijs "
+        "-- een extreme netto-positionering (bijv. sterk netto-long) kan "
+        "duiden op een uitgerekte markt die gevoelig is voor een omkering."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "commodity": {
+                "type": "string",
+                "description": "Een van: WTI, BRENT, NATURAL_GAS, COPPER, ALUMINUM, WHEAT, CORN, COTTON, SUGAR, COFFEE (zelfde lijst als get_commodity_price)",
+            }
+        },
+        "required": ["commodity"],
+    },
+}
+
 # Wisselkoersen -- relevant voor sectie 9 (Macro Exposure) bij bedrijven met
 # materiele buitenlandse omzet/kosten in een andere valuta dan de rapportagevaluta.
 FX_TOOL = {
@@ -302,7 +334,7 @@ EVENT_REACTION_TOOL = {
 
 # Lijst met alle tools die de agent kent -- straks in analyst_agent.py geef je
 # dit door als tools=ALL_TOOLS in de Claude-call.
-ALL_TOOLS = [NEWS_TOOL, WEB_SEARCH_TOOL, PLAYBOOK_TOOL, PROJECTION_TOOL, SENSITIVITY_TOOL, MONTE_CARLO_TOOL, COMMODITY_TOOL, FX_TOOL, CONSISTENCY_TOOL, EVENT_REACTION_TOOL]
+ALL_TOOLS = [NEWS_TOOL, WEB_SEARCH_TOOL, PLAYBOOK_TOOL, PROJECTION_TOOL, SENSITIVITY_TOOL, MONTE_CARLO_TOOL, COMMODITY_TOOL, CFTC_TOOL, FX_TOOL, CONSISTENCY_TOOL, EVENT_REACTION_TOOL]
 
 
 def run_tool(tool_name: str, tool_input: dict, context: dict | None = None) -> dict:
@@ -328,6 +360,8 @@ def run_tool(tool_name: str, tool_input: dict, context: dict | None = None) -> d
         return run_monte_carlo_simulation(tool_input, context)
     if tool_name == "get_commodity_price":
         return fetch_commodity_price(tool_input["commodity"])
+    if tool_name == "get_cftc_positioning":
+        return fetch_cftc_positioning(tool_input["commodity"])
     if tool_name == "get_fx_rate":
         return fetch_fx_rate(tool_input["from_currency"], tool_input["to_currency"])
     if tool_name == "assess_with_consistency":

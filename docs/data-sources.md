@@ -8,6 +8,7 @@
 | FRED | Macro data: fed funds rate, 10Y treasury yield, CPI, unemployment | `FRED_API_KEY` | — |
 | Alpha Vantage | Commodity and FX prices | `ALPHAVANTAGE_API_KEY` | — |
 | FINRA (`api.finra.org`) | Short interest | No | **Reliability caveat below — read before trusting this in production.** |
+| CFTC (`publicreporting.cftc.gov`) | Commitments of Traders — speculative futures positioning | No (optional `CFTC_APP_TOKEN` for a higher rate limit) | **Reliability caveat below — read before trusting this in production.** |
 | Voyage AI (`api.voyageai.com`) | Embeddings for the library/RAG search feature | `VOYAGE_API_KEY` | Called via raw HTTP (`requests`), not the `voyageai` SDK — see ADR-003 |
 | Anthropic API | The analysis/report-writing itself | `ANTHROPIC_API_KEY` | — |
 
@@ -24,6 +25,26 @@ found, it returns a clear error rather than silently using the wrong
 field. **This is the single least-verified integration in the project.**
 Before relying on it: run `python src/finra_data.py TICKER` for a few
 real, liquid tickers and confirm the output looks sensible.
+
+## CFTC futures positioning — reliability caveat
+
+`cftc_data.py`'s dataset ID (the "Legacy Futures Only" Commitments of
+Traders report, `6dca-aqww`) and field names were determined from CFTC's
+public documentation, **not from a live test** — same constraint as
+FINRA above, the development environment had no network access to the
+CFTC's API. To reduce the risk of the exact field names having changed,
+the code fetches the dataset's own Socrata metadata endpoint first and
+matches fields by keyword rather than hardcoding names outright; if the
+expected fields aren't found, it returns a clear error rather than
+silently using the wrong field. It also matches the requested commodity
+against `market_and_exchange_names` with a `like` (contains) query
+instead of an exact string, since the exact CFTC market-name suffixes
+(e.g. the exchange name appended after the commodity) weren't verified
+live either. Before relying on it: run `python src/data/cftc_data.py
+WTI` (or another supported commodity) and confirm the output looks
+sensible — in particular that `market_name` resolved to the contract you
+expected, not an unrelated one that happened to contain the same
+substring.
 
 ## Why SEC is preferred over Yahoo Finance when both have a figure
 

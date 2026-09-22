@@ -242,6 +242,11 @@ get_fx_rate-tool (sectie 9), voor bedrijven waarvan de resultaten materieel \
 afhangen van een specifieke grondstofprijs of vreemde valuta. Gebruik ze \
 alleen als dat voor dit specifieke bedrijf relevant is -- forceer het niet \
 als er geen duidelijke grondstof- of valutablootstelling is.
+- Bij materiele grondstofgevoeligheid kun je in sectie 8 ook get_cftc_positioning \
+gebruiken (naast get_commodity_price) om te laten zien of speculanten momenteel \
+netto long of short zitten in het onderliggende futures-contract, en of dat \
+een uitgerekt niveau is -- alleen als aanvulling, niet als vervanging van de \
+kale prijsdata.
 - Je hebt daarnaast een run_financial_projection-tool voor sectie 15 \
 (Scenario Analysis): geef ALLEEN je aannames op (omzetgroei%, operating \
 margin%, capex% van omzet) -- de tool gebruikt zelf de geverifieerde SEC- \
@@ -411,6 +416,7 @@ REPORT_SECTIONS = [
             "Wat is het huidige prijsniveau van de onderliggende grondstof/markt t.o.v. het historische gemiddelde?",
             "Wat is de pass-through mechanism (kan het bedrijf kostenstijgingen doorberekenen en met welke lag)?",
             "Hoe groot is de volume- vs. prijs-elasticiteit?",
+            "Indien relevant: hoe zit de speculatieve futures-positionering (CFTC Commitments of Traders) er momenteel bij -- netto long, netto short, en is dat een uitgerekt niveau?",
         ],
     },
     {

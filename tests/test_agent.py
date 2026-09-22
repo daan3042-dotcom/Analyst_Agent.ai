@@ -2965,6 +2965,89 @@ def test_fetch_short_interest_no_data_for_ticker():
     assert "error" in result
 
 
+# ---------- cftc_data.py: speculatieve futures-positionering (schema-discovery-aanpak) ----------
+
+def test_fetch_cftc_positioning_with_realistic_schema():
+    from unittest.mock import patch, MagicMock
+    from data.cftc_data import fetch_cftc_positioning
+
+    fake_metadata = {"columns": [
+        {"fieldName": "market_and_exchange_names"}, {"fieldName": "report_date_as_yyyy_mm_dd"},
+        {"fieldName": "open_interest_all"}, {"fieldName": "noncomm_positions_long_all"},
+        {"fieldName": "noncomm_positions_short_all"}, {"fieldName": "comm_positions_long_all"},
+        {"fieldName": "comm_positions_short_all"},
+    ]}
+    fake_data = [{
+        "market_and_exchange_names": "WTI-PHYSICAL - NEW YORK MERCANTILE EXCHANGE",
+        "report_date_as_yyyy_mm_dd": "2026-09-16",
+        "open_interest_all": "2000000", "noncomm_positions_long_all": "500000",
+        "noncomm_positions_short_all": "300000", "comm_positions_long_all": "700000",
+        "comm_positions_short_all": "900000",
+    }]
+
+    def fake_get(url, headers=None, params=None, timeout=None):
+        resp = MagicMock()
+        resp.raise_for_status = lambda: None
+        resp.json.return_value = fake_metadata if params is None else fake_data
+        return resp
+
+    with patch("data.cftc_data.requests.get", side_effect=fake_get):
+        result = fetch_cftc_positioning("WTI")
+
+    assert result["open_interest"] == 2000000.0
+    assert result["net_noncommercial_position"] == 200000.0
+    assert result["net_position_pct_of_open_interest"] == 10.0
+
+
+def test_fetch_cftc_positioning_unknown_commodity():
+    from data.cftc_data import fetch_cftc_positioning
+    result = fetch_cftc_positioning("BITCOIN")
+    assert "error" in result
+
+
+def test_fetch_cftc_positioning_unrecognizable_schema():
+    from unittest.mock import patch, MagicMock
+    from data.cftc_data import fetch_cftc_positioning
+    fake_metadata = {"columns": [{"fieldName": "completelyDifferentFieldName"}]}
+
+    def fake_get(url, headers=None, params=None, timeout=None):
+        resp = MagicMock(); resp.raise_for_status = lambda: None; resp.json.return_value = fake_metadata
+        return resp
+
+    with patch("data.cftc_data.requests.get", side_effect=fake_get):
+        result = fetch_cftc_positioning("WTI")
+    assert "error" in result
+
+
+def test_fetch_cftc_positioning_network_failure():
+    from unittest.mock import patch
+    from data.cftc_data import fetch_cftc_positioning
+    with patch("data.cftc_data.requests.get", side_effect=Exception("netwerkfout")):
+        result = fetch_cftc_positioning("WTI")
+    assert "error" in result
+
+
+def test_fetch_cftc_positioning_no_data_for_commodity():
+    from unittest.mock import patch, MagicMock
+    from data.cftc_data import fetch_cftc_positioning
+    fake_metadata = {"columns": [
+        {"fieldName": "market_and_exchange_names"}, {"fieldName": "report_date_as_yyyy_mm_dd"},
+        {"fieldName": "open_interest_all"}, {"fieldName": "noncomm_positions_long_all"},
+        {"fieldName": "noncomm_positions_short_all"}, {"fieldName": "comm_positions_long_all"},
+        {"fieldName": "comm_positions_short_all"},
+    ]}
+
+    def fake_get(url, headers=None, params=None, timeout=None):
+        resp = MagicMock()
+        resp.raise_for_status = lambda: None
+        resp.json.return_value = fake_metadata if params is None else []
+        return resp
+
+    with patch("data.cftc_data.requests.get", side_effect=fake_get):
+        result = fetch_cftc_positioning("COFFEE")
+    assert "error" in result
+
+
 # ---------- monitor_kill_criteria.py: los bewakingsscript ----------
 
 def test_check_ticker_detects_breached_criterion(tmp_path, monkeypatch):

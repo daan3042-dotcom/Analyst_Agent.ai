@@ -16,9 +16,10 @@ User runs: python src/analyst_agent.py TICKER [--peers TICKER1 TICKER2 ...]
        │
        ▼
 [2] Prompt assembly (framework.py) + tool-use loop with Claude:
-     Claude can call 9 tools (news search, playbook/library search,
+     Claude can call 10 tools (news search, playbook/library search,
      financial projection, sensitivity analysis, Monte Carlo, commodity
-     price, FX rate, consistency-assessment, event price reaction)
+     price, CFTC futures positioning, FX rate, consistency-assessment,
+     event price reaction)
        │
        ▼
 [3] Internal self-check (same conversation, cheaper than a full re-review)
@@ -66,13 +67,14 @@ developments, ownership & governance).
 |---|---|
 | `agent/analyst_agent.py` | Orchestrates the whole pipeline end to end |
 | `framework/framework.py` | The 18-section prompt, all writing rules, chart-type documentation |
-| `framework/tools.py` | The 9 tools Claude can call during analysis |
+| `framework/tools.py` | The 10 tools Claude can call during analysis |
 | `reporting/render.py` | Renders the final HTML report; 29 chart types |
 | `data/sec_data.py` | SEC EDGAR financials (primary US source) + Form 4 insider transaction parsing |
 | `data/fmp_data.py` | Financial Modeling Prep — fallback for non-US filers |
 | `data/fred_data.py` | Macro data (fed funds rate, 10Y yield, CPI, unemployment) |
 | `data/data_fetch.py` | yfinance-based data: prices, VaR, Sharpe/Sortino, rolling beta, HMM regime detection, options-implied-volatility analysis |
 | `data/commodity_data.py` | Alpha Vantage commodity/FX prices |
+| `data/cftc_data.py` | CFTC Commitments of Traders (speculative futures positioning) — see `docs/data-sources.md` for its schema-discovery approach and reliability caveat |
 | `data/finra_data.py` | Short interest data — see `docs/data-sources.md` for its schema-discovery approach and reliability caveat |
 | `analysis/forensics.py` | 7 forensic accounting flags + ~15 deterministically-computed verified metrics |
 | `analysis/consistency_check.py` | Deterministic checks that the report's text/charts match the real computed values |
@@ -99,7 +101,7 @@ src/
 ├── agent/          ← analyst_agent.py
 ├── framework/      ← framework.py, tools.py
 ├── data/           ← data_fetch.py, sec_data.py, fmp_data.py,
-│                     fred_data.py, commodity_data.py, finra_data.py
+│                     fred_data.py, commodity_data.py, cftc_data.py, finra_data.py
 ├── analysis/       ← forensics.py, consistency_check.py, reverse_dcf.py,
 │                     altman_z.py, piotroski_score.py, financial_model.py,
 │                     peer_analysis.py, simple_hmm.py, self_consistency.py

@@ -19,6 +19,7 @@ For a given ticker, a report covering (where data allows):
   peer comparison, ownership & governance
 - Macro exposure (FRED), commodity/FX exposure (Alpha Vantage)
 - Insider transactions (SEC Form 4), short interest (FINRA),
+  speculative futures positioning (CFTC Commitments of Traders),
   options-implied volatility vs. historical volatility
 - Quantitative risk: VaR, Sharpe/Sortino, rolling beta, HMM regime
   detection
